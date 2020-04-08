@@ -52,9 +52,12 @@ function modules() {
   // Bootstrap
   var bootstrap = gulp.src('./node_modules/bootstrap/dist/**/*')
     .pipe(gulp.dest('./vendor/bootstrap'));
-  // Font Awesome
-  var fontAwesome = gulp.src('./node_modules/@fortawesome/**/*')
-    .pipe(gulp.dest('./vendor'));
+  // Font Awesome CSS
+  var fontAwesomeCSS = gulp.src('./node_modules/@fortawesome/fontawesome-free/css/**/*')
+    .pipe(gulp.dest('./vendor/fontawesome-free/css'));
+  // Font Awesome Webfonts
+  var fontAwesomeWebfonts = gulp.src('./node_modules/@fortawesome/fontawesome-free/webfonts/**/*')
+    .pipe(gulp.dest('./vendor/fontawesome-free/webfonts'));
   // jQuery Easing
   var jqueryEasing = gulp.src('./node_modules/jquery.easing/*.js')
     .pipe(gulp.dest('./vendor/jquery-easing'));
@@ -64,7 +67,7 @@ function modules() {
       '!./node_modules/jquery/dist/core.js'
     ])
     .pipe(gulp.dest('./vendor/jquery'));
-  return merge(bootstrap, fontAwesome, jquery, jqueryEasing);
+  return merge(bootstrap, fontAwesomeCSS, fontAwesomeWebfonts, jquery, jqueryEasing);
 }
 
 // CSS task
@@ -78,7 +81,6 @@ function css() {
     }))
     .on("error", sass.logError)
     .pipe(autoprefixer({
-      browsers: ['last 2 versions'],
       cascade: false
     }))
     .pipe(header(banner, {
@@ -98,9 +100,7 @@ function js() {
   return gulp
     .src([
       './js/*.js',
-      '!./js/*.min.js',
-      '!./js/contact_me.js',
-      '!./js/jqBootstrapValidation.js'
+      '!./js/*.min.js'
     ])
     .pipe(uglify())
     .pipe(header(banner, {
@@ -116,7 +116,7 @@ function js() {
 // Watch files
 function watchFiles() {
   gulp.watch("./scss/**/*", css);
-  gulp.watch("./js/**/*", js);
+  gulp.watch(["./js/**/*", "!./js/**/*.min.js"], js);
   gulp.watch("./**/*.html", browserSyncReload);
 }
 
