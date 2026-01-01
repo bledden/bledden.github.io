@@ -546,7 +546,7 @@ def generate_open_character_visualizations():
     ax.set_title('All Characters Improved (9-10 seeds each)', fontsize=14, fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(characters, fontsize=9)
-    ax.legend(loc='lower right')
+    ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1), frameon=True, fancybox=True)
     ax.set_ylim(0, 1.0)
 
     # Add improvement annotations
@@ -555,11 +555,10 @@ def generate_open_character_visualizations():
         ax.text(bar2.get_x() + bar2.get_width()/2, bar2.get_height() + 0.02,
                 f'+{imp:.2f}', ha='center', va='bottom', fontweight='bold', color='#27ae60', fontsize=10)
 
-    # Add note about "harder" characters
-    ax.annotate('Nuanced personas\nshowed largest gains', xy=(3.5, 0.52), xytext=(4.2, 0.40),
-                fontsize=9, ha='center',
-                arrowprops=dict(arrowstyle='->', color='#27ae60', lw=1.5),
-                color='#27ae60')
+    # Add note about "harder" characters - position below the chart
+    ax.text(3.5, 0.08, 'Nuanced personas (Sarcastic, Humorist)\nshowed largest gains (+0.26)',
+            fontsize=9, ha='center', color='#27ae60', style='italic',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#27ae60', alpha=0.8))
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'per_character.png'), dpi=150, bbox_inches='tight')
