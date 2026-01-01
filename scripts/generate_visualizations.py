@@ -428,34 +428,50 @@ def generate_memorization_visualizations():
     plt.savefig(os.path.join(out_dir, 'training_curves.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
-    # 5. Effect size visualization
-    fig, ax = plt.subplots(figsize=(8, 5))
+    # 5. Effect size visualization - redesigned for clarity
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     comparisons = ['SL vs RL-EoE', 'SL vs RL-Step']
-    hedges_g = [-8.2, -15.3]
+    hedges_g = [8.2, 15.3]  # Using absolute values
 
     colors = ['#3498db', '#9b59b6']
-    bars = ax.barh(comparisons, [abs(g) for g in hedges_g], color=colors, edgecolor='black', linewidth=1.2)
+    y_pos = np.arange(len(comparisons))
+    bars = ax.barh(y_pos, hedges_g, color=colors, edgecolor='black', linewidth=1.2, height=0.5)
 
-    ax.set_xlabel("Hedges' g (Effect Size)")
-    ax.set_title('Statistical Significance: Massive Effect Sizes')
+    ax.set_xlabel("Hedges' g (Effect Size)", fontsize=12)
+    ax.set_title('Statistical Significance: Massive Effect Sizes', fontsize=14, fontweight='bold')
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(comparisons, fontsize=11)
 
-    # Add interpretation zones
-    ax.axvline(x=0.2, color='gray', linestyle='--', alpha=0.5)
-    ax.axvline(x=0.5, color='gray', linestyle='--', alpha=0.5)
-    ax.axvline(x=0.8, color='gray', linestyle='--', alpha=0.5)
+    # Add colored zones for effect size interpretation
+    ax.axvspan(0, 0.2, alpha=0.15, color='green', label='Small (< 0.2)')
+    ax.axvspan(0.2, 0.5, alpha=0.15, color='yellow', label='Medium (0.2-0.5)')
+    ax.axvspan(0.5, 0.8, alpha=0.15, color='orange', label='Large (0.5-0.8)')
+    ax.axvspan(0.8, 18, alpha=0.1, color='red', label='Very Large (> 0.8)')
 
-    ax.text(0.1, -0.35, 'Small', ha='center', fontsize=9, color='gray')
-    ax.text(0.35, -0.35, 'Medium', ha='center', fontsize=9, color='gray')
-    ax.text(0.65, -0.35, 'Large', ha='center', fontsize=9, color='gray')
-    ax.text(5, -0.35, 'MASSIVE', ha='center', fontsize=9, color='red', fontweight='bold')
+    # Add threshold lines with labels at top
+    for thresh, label in [(0.2, 'Small'), (0.5, 'Medium'), (0.8, 'Large')]:
+        ax.axvline(x=thresh, color='black', linestyle='--', alpha=0.4, linewidth=1)
+        ax.text(thresh, 1.7, label, ha='center', fontsize=9, color='gray', style='italic')
 
-    # Add value labels
+    # Add value labels on bars
     for bar, g in zip(bars, hedges_g):
         ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height()/2,
-                f'g = {g}', ha='left', va='center', fontweight='bold')
+                f'g = {g:.1f}', ha='left', va='center', fontweight='bold', fontsize=11)
+
+    # Add annotation showing how massive these are
+    ax.annotate('10-19x larger than\n"large" threshold (0.8)',
+                xy=(8.2, 0), xytext=(12, 0.8),
+                fontsize=10, ha='center',
+                arrowprops=dict(arrowstyle='->', color='#e74c3c', lw=1.5),
+                color='#e74c3c')
 
     ax.set_xlim(0, 18)
+    ax.set_ylim(-0.5, 2)
+
+    # Add a note about interpretation
+    ax.text(9, -0.4, 'Effect sizes > 0.8 are considered "large" in social sciences.\nThese results are 10-19x that threshold.',
+            fontsize=9, color='gray', style='italic', ha='center')
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'effect_sizes.png'), dpi=150, bbox_inches='tight')
