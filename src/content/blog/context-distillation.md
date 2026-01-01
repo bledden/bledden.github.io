@@ -117,6 +117,28 @@ We tested 8 distillation methods across two model families:
 
 ---
 
+## The W&B Training Curves
+
+The [full W&B report](https://wandb.ai/facilitair/context-distillation) shows the training dynamics across all 160 runs:
+
+**Key observations from the curves:**
+
+1. **`train/phase`** (hybrid runs): Shows the binary 0→1 transition at step 50. This is when collapse occurs.
+
+2. **`train/score`**: Pure on-policy methods (green/yellow lines) maintain scores of 0.4-0.6 throughout training. Hybrid/mixture methods (other colors) crash to near-zero after the phase transition.
+
+3. **`train/on_policy_loss`** (mixture): Goes deeply negative (-500 to -1000) as the GKD objective tries to correct garbage outputs with extreme gradients.
+
+4. **`train/kl_divergence`**: Spikes to 4-6 during collapse as student distribution diverges catastrophically from teacher.
+
+5. **`eval/avg_score`**: The clearest signal—on_policy_gkd runs cluster at 0.5-0.6, while hybrid runs flatline at 0-0.1.
+
+6. **`train/seed_tokens`** (teacher_seeded): Shows the smooth decay from 20→0 tokens over 50 steps. No phase transition, no collapse.
+
+The curves make the failure mode visually obvious: stable training → phase transition → immediate collapse → no recovery.
+
+---
+
 ## What We Tried (And What Failed)
 
 ### KL Regularization
