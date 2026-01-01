@@ -228,20 +228,24 @@ def generate_gan_visualizations():
 
     bars = ax.bar(metrics, metric_values, color=colors, width=0.6, edgecolor='black', linewidth=1.2)
     ax.set_ylabel('Score (%)')
-    ax.set_title('Metrics Said "Great!" — Output Was Garbage')
-    ax.set_ylim(0, 110)
+    ax.set_title('Metrics Said "Great!" - Output Was Garbage')  # Single dash
+    ax.set_ylim(0, 120)  # More room for annotations
 
-    # Add value labels
-    for bar, val in zip(bars, metric_values):
-        ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 2,
-                f'{val}%', ha='center', va='bottom', fontweight='bold', fontsize=11)
+    # Add value labels - position 28% to the left to avoid arrow overlap
+    for i, (bar, val) in enumerate(zip(bars, metric_values)):
+        if i == 4:  # Originality bar - position label to the left
+            ax.text(bar.get_x() + bar.get_width()/2 - 0.25, bar.get_height() + 2,
+                    f'{val}%', ha='center', va='bottom', fontweight='bold', fontsize=11)
+        else:
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 2,
+                    f'{val}%', ha='center', va='bottom', fontweight='bold', fontsize=11)
 
-    # Add annotations
-    ax.annotate('These metrics\nmissed the problem', xy=(1.5, 100), xytext=(1.5, 115),
+    # Add annotations - keep within chart bounds
+    ax.annotate('These metrics\nmissed the problem', xy=(1.5, 100), xytext=(1.5, 108),
                 fontsize=10, ha='center', color='green',
                 arrowprops=dict(arrowstyle='->', color='green'))
 
-    ax.annotate('Only this caught\nthe real issue', xy=(4, 28), xytext=(4, 50),
+    ax.annotate('Only this caught\nthe real issue', xy=(4, 28), xytext=(4.4, 55),
                 fontsize=10, ha='center', color='red',
                 arrowprops=dict(arrowstyle='->', color='red'))
 
@@ -274,11 +278,13 @@ def generate_gan_visualizations():
     ax.set_title('V1 vs V2: Training Improvements')
     ax.set_xticks(x)
     ax.set_xticklabels(metrics)
-    ax.legend()
+    ax.legend(loc='upper right')
+    ax.set_ylim(0, 120)  # More room for annotation
 
-    # Add annotations
-    ax.annotate('Mode collapse\nfixed', xy=(0, 100), xytext=(0.3, 85),
-                fontsize=9, ha='left')
+    # Add annotation - positioned above bars, not overlapping
+    ax.annotate('Mode collapse\nfixed', xy=(0.175, 100), xytext=(0.6, 110),
+                fontsize=9, ha='center',
+                arrowprops=dict(arrowstyle='->', color='#3498db', lw=1.5))
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'v1_vs_v2.png'), dpi=150, bbox_inches='tight')
