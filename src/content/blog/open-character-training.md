@@ -1,7 +1,7 @@
 ---
 title: 'Teaching AI to Embody Characters: A Replication of Open Character Training'
 description: 'We trained 5 distinct AI personas using constitutional methods. Character alignment improved 39%, prompt distillation worked, and adversarial resistance increased. The method generalizes across personality types.'
-pubDate: 'Dec 31 2025'
+pubDate: 'Jan 01 2026'
 heroImage: '../../assets/blog-placeholder-5.jpg'
 ---
 
