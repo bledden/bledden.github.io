@@ -125,9 +125,12 @@ def generate_cai_visualizations():
     # Highlight our study
     ax.axvspan(-0.5, 0.5, alpha=0.2, color='yellow')
 
+    # Combined legend with white background to avoid line overlap
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    legend = ax.legend(lines1 + lines2, labels1 + labels2, loc='upper left',
+                       frameon=True, fancybox=True, framealpha=1.0, edgecolor='gray')
+    legend.get_frame().set_facecolor('white')
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'data_scale_analysis.png'), dpi=150, bbox_inches='tight')
