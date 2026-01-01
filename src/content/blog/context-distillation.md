@@ -283,13 +283,13 @@ The [project spec](https://github.com/thinking-machines-lab/tinker-project-ideas
 - Context distillation is useful for style/format, not reasoning ability
 
 **For size distillation (small ← large model)**:
-- On-policy is strictly better than off-policy
-- Hybrid mode catastrophically collapses
-- Teacher seeding achieves 58-71% GSM8K accuracy
+- On-policy significantly outperformed off-policy in our experiments
+- Hybrid mode collapsed in all configurations we tested
+- Teacher seeding achieved the best results (58-71% GSM8K accuracy)
 
-**The deeper insight**: The GKD paper's hybrid recommendation assumes the student can generate coherent outputs after off-policy training. With large capability gaps, this assumption fails—the student learns to mimic tokens without understanding them, producing garbage when forced to generate independently.
+**The deeper insight**: The GKD paper's hybrid recommendation assumes the student can generate coherent outputs after off-policy training. With large capability gaps, this assumption may not hold—the student learns to mimic tokens without understanding them, producing garbage when forced to generate independently.
 
-Teacher seeding provides the benefits of guided training without the corruption of off-policy objectives. For knowledge distillation with capability gaps, use it.
+**Caveats**: Our experiments used specific hyperparameters, model families, and a single benchmark (GSM8K). The collapse pattern was consistent across our tests, but different configurations (learning rates, longer warmup, different model architectures) might yield different results. Teacher seeding appears promising, but more investigation is warranted before drawing universal conclusions.
 
 ---
 

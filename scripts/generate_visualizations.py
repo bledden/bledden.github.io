@@ -687,7 +687,7 @@ def generate_context_distillation_visualizations():
 
     # Add phase transition marker
     ax.axvline(x=50, color='black', linestyle='--', linewidth=2, alpha=0.7)
-    ax.annotate('PHASE\nTRANSITION', xy=(50, 0.55), xytext=(50, 0.7),
+    ax.annotate('PHASE\nTRANSITION', xy=(50, 0.55), xytext=(35, 0.72),
                 fontsize=11, ha='center', fontweight='bold',
                 arrowprops=dict(arrowstyle='->', color='black', lw=2))
 
