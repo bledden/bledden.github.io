@@ -26,11 +26,12 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 				90%+ routing accuracy with &lt;100ms latency. The system predicts execution strategy, task domain,
 				required capabilities, and optimal model simultaneously.
 			</p>
-			<p>Some results from recent experiments:</p>
+			<p>Recent experiments (7 projects, 300+ runs, 10-seed statistical validation):</p>
 			<ul>
-				<li><strong>Sequential multi-agent collaboration</strong> — 73% pass rate vs 19% baseline on 154+ task benchmark</li>
-				<li><strong>Phase transition discovery</strong> — Found that hybrid distillation causes complete model collapse at the off-policy to on-policy transition (KL spikes 361x in one step)</li>
-				<li><strong>3-agent anomaly detection</strong> — 100% detection rate across 15 test scenarios with 22ms latency</li>
+				<li><strong>Open Character Training</strong> — Constitutional DPO improves character alignment +39%, reduces adversarial break rate 65%→35%</li>
+				<li><strong>Phase transition discovery</strong> — Hybrid distillation collapses at mode transition regardless of capability gap (KL spikes 361x in one step)</li>
+				<li><strong>SL vs RL efficiency</strong> — Supervised learning converges in O(1) episodes, RL scales as O(n^0.89) for memorization tasks</li>
+				<li><strong>Negative result</strong> — Token-level noise augmentation significantly hurts LLM training (p=0.0018, Hedges' g=1.57)</li>
 			</ul>
 
 			<h2>Background</h2>
