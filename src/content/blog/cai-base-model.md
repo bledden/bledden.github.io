@@ -2,7 +2,7 @@
 title: 'Constitutional AI from Base Models: Can You Train Safety Without Instruction Tuning?'
 description: 'We replicated Constitutional AI starting from a raw base model. The pipeline works, but DPO needs more than 42 training pairs to show improvement over SFT alone.'
 pubDate: 'Dec 31 2025'
-heroImage: '../../assets/blog-placeholder-2.jpg'
+heroImage: '../../assets/cai-hero.png'
 ---
 
 Constitutional AI (CAI) is Anthropic's approach to training helpful, harmless AI systems using a set of principles—a "constitution"—rather than pure human preference data. But most implementations start from instruction-tuned models, which may introduce biases from that initial training.

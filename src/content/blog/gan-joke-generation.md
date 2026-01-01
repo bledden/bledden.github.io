@@ -2,7 +2,7 @@
 title: 'GAN-Style Training for Jokes: When Metrics Lie'
 description: 'We trained a GAN to generate jokes. The metrics looked great. The jokes were terrible. A cautionary tale about evaluation gaps in creative generation.'
 pubDate: 'Dec 31 2025'
-heroImage: '../../assets/blog-placeholder-3.jpg'
+heroImage: '../../assets/gan-hero.png'
 ---
 
 What if you could train a language model to generate jokes using adversarial training—like GANs for images, but for humor? We tried it. The experiment *mechanically* worked, but the output quality revealed a fundamental problem with how we evaluate creative text generation.

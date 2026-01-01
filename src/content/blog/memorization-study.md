@@ -2,7 +2,7 @@
 title: 'Why Supervised Learning is 909% More Efficient Than RL: An Empirical Validation'
 description: 'We tested information-theoretic predictions about learning efficiency. Supervised learning converges in 2 episodes regardless of problem size. RL scales with n^0.89. The theory holds.'
 pubDate: 'Dec 31 2025'
-heroImage: '../../assets/blog-placeholder-4.jpg'
+heroImage: '../../assets/memorization-hero.png'
 ---
 
 The "LoRA without regret" blog post makes a bold claim: supervised learning receives log(n) bits of information per episode, while reinforcement learning receives only O(1) bits. This predicts that supervised learning should be dramatically more sample-efficient.
