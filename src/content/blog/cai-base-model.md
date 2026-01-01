@@ -36,6 +36,8 @@ We implemented a three-phase CAI pipeline:
 | Attack Success Rate | 88.75% | 87.92% | **-0.83%** |
 | Helpfulness | 4.94/5 | 4.90/5 | -0.04 |
 
+![ASR Comparison](/images/cai/asr_comparison.png)
+
 **Wait—that's almost no improvement?**
 
 Exactly. And understanding *why* is the most interesting finding.
@@ -62,6 +64,8 @@ Looking at the training curves across 10 seeds:
 - **DPO accuracy** reaches 80-100% (correctly distinguishes chosen vs rejected)
 - **Helpfulness** maintained at 4.6-5.0 throughout training
 - **Loss** increases during DPO phase (expected as model learns to discriminate)
+
+![DPO Training Dynamics](/images/cai/dpo_training_dynamics.png)
 
 The mechanics work. The model is learning *something*. It just doesn't have enough signal to generalize from 42 examples.
 
@@ -115,6 +119,8 @@ prompt_tokens = self.tokenizer.apply_chat_template(
 | 1K pairs | $50-60 | Minimum viable |
 | 10K pairs | $500-600 | Reasonable replication |
 | 161K pairs (original) | $8,000+ | Full-scale |
+
+![Data Scale Analysis](/images/cai/data_scale_analysis.png)
 
 ---
 

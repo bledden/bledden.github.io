@@ -53,6 +53,8 @@ The first implementation collapsed immediately:
 
 The discriminator learned too fast, and the generator collapsed to "safe" repetitive patterns that avoided discrimination.
 
+![V1 vs V2 Comparison](/images/gan/v1_vs_v2.png)
+
 ### V2: Fixed Training, Broken Output
 
 We fixed the training dynamics:
@@ -74,6 +76,8 @@ We fixed the training dynamics:
 | Originality | **2.8/10** | ...wait |
 
 The diversity metrics were **completely misleading**.
+
+![Metrics vs Reality](/images/gan/metrics_vs_reality.png)
 
 ---
 
@@ -100,6 +104,8 @@ From our W&B tracking across 10 seeds:
 - **Generator fooling rate**: Varied wildly (3.5% to 100% by seed)
 - **Discriminator accuracy**: Settled to 50-68% (well-calibrated)
 - **Discriminator confidence**: 10-57% (not overconfident)
+
+![Training Dynamics](/images/gan/training_dynamics.png)
 
 The *training dynamics* were healthy. The *output quality* was not. These are different problems.
 

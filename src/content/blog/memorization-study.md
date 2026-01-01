@@ -52,6 +52,8 @@ If you know the answer directly, you learn in one shot. If you only know "too hi
 
 **Supervised converges in exactly 2 episodes regardless of problem size.**
 
+![SL vs RL Scaling](/images/memorization/sl_vs_rl_scaling.png)
+
 The theoretical prediction was 1 episode. The extra episode is gradient descent overhead—you see the answer once, then need one update to internalize it.
 
 ### RL-EoE Scaling
@@ -59,6 +61,8 @@ The theoretical prediction was 1 episode. The extra episode is gradient descent 
 RL with binary reward scaled as **n^0.89** (R² = 0.967).
 
 The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent suggests the model is slightly better than random search—it's learning some structure—but still fundamentally limited by the 1-bit-per-episode bottleneck.
+
+![RL Scaling Fit](/images/memorization/rl_scaling_fit.png)
 
 ### RL-Step: Complete Failure
 
@@ -81,6 +85,8 @@ With 10 seeds per condition, all comparisons showed:
 
 These are *massive* effect sizes. This isn't a subtle difference—it's a fundamental gap in learning efficiency.
 
+![Effect Sizes](/images/memorization/effect_sizes.png)
+
 ---
 
 ## The W&B Training Curves
@@ -98,6 +104,8 @@ From our tracking across multiple sweeps:
 - Convergence only for small N
 
 The curves show supervised learning as a step function (instant convergence) while RL is a slow climb.
+
+![Training Curves](/images/memorization/training_curves.png)
 
 ---
 
@@ -149,6 +157,8 @@ Why is the gap so large?
 **RL (binary reward)**: Each episode tells you "right" or "wrong"—1 bit. To narrow down among 100 possibilities, you need ~100 guesses on average (with some structure, ~n^0.89 in practice).
 
 **The ratio**: log₂(100) / 1 = 6.6 bits vs 1 bit = 6.6x advantage per episode. Compound this over training, and supervised wins by orders of magnitude.
+
+![Information Theory](/images/memorization/information_theory.png)
 
 ---
 
