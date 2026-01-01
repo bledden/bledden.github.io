@@ -15,9 +15,16 @@ The GKD paper recommends hybrid distillation: bootstrap with off-policy, then re
 
 From the [original project spec](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/on-policy-context-distillation.md):
 
-> How does on-policy distillation compare to off-policy distillation for training student models to match teacher models?
+> How do different context distillation methodologies compare in their effectiveness for training student models to match teacher model performance?
 
-We discovered the answer depends critically on whether there's a capability gap between teacher and student.
+The spec proposed comparing three approaches for **context distillation** (same model with/without few-shot context):
+1. Off-policy distillation alone
+2. On-policy distillation alone
+3. Hybrid: off-policy → on-policy
+
+This builds on foundational work by [Anthropic (2021)](https://arxiv.org/abs/2112.00861) and [Snell et al. (2022)](https://arxiv.org/abs/2209.15189), with on-policy methods from [Agarwal et al. (2023)](https://arxiv.org/abs/2306.13649).
+
+**What we discovered**: The answer depends critically on whether there's a capability gap between teacher and student—and this changes everything.
 
 ---
 
@@ -195,18 +202,47 @@ Step 50:  [Teacher: 0 tokens]  [Student: all]
 
 ---
 
-## Context Distillation vs Size Distillation
+## The Pivot: Context Distillation → Size Distillation
 
-The original spec asked about **context distillation** (same model with/without few-shot context). We discovered this doesn't work for capability transfer:
+We started with the original spec's setup: **context distillation** using the same model with/without few-shot examples (following [Snell et al. 2022](https://arxiv.org/abs/2209.15189)).
+
+### Phase 1: Same-Model Context Distillation (Failed)
+
+We ran 10-seed experiments with Qwen3-4B as both teacher (with 10-shot context) and student (no context):
+
+| Mode | Eval Score | Downstream Accuracy |
+|------|:----------:|:-------------------:|
+| Off-Policy | 0.97 | **0%** |
+| On-Policy GKD | 0.44 | **2-6%** |
+| Hybrid | 0.10 | **0%** |
+| Hybrid Gradual | 0.13 | **0%** |
+
+Off-policy achieved 0.97 eval score but 0% downstream accuracy. The student learned to **match the teacher's output format** but couldn't actually solve problems. On-policy GKD fared slightly better (2-6% accuracy) but still far below useful.
+
+**Why**: When student and teacher are the same model, there's no capability gap. The few-shot context helps the teacher format answers correctly, but the student already has the same underlying reasoning ability. Distillation produces format matching, not capability transfer.
+
+**Key insight**: Our eval metric (Jaccard + bigram similarity) was measuring format matching, not actual capability. This is why off-policy achieved 0.97 eval but 0% accuracy—the student matched the teacher's response style perfectly without learning to reason.
+
+### Phase 2: Pivot to Size Distillation
+
+To actually transfer capabilities, we switched to using larger teachers:
 
 | Setup | Result |
 |-------|--------|
-| Same model (Qwen-4B ± context) | 0% downstream accuracy |
-| Size distillation (4B ← 30B) | 58-71% accuracy |
+| Qwen-4B ← Qwen-30B | 58.6% GSM8K accuracy |
+| Llama-8B ← Llama-70B | 71.0% GSM8K accuracy |
 
-**Why context distillation fails**: When student and teacher are the same model, there's no capability gap. The few-shot context helps format answers correctly, but the student already has the same underlying capabilities. Distillation produces format matching, not capability transfer.
+This worked—but introduced the distribution cliff problem that became our main finding.
 
-**The lesson**: For actual knowledge transfer, you need a teacher with capabilities the student lacks.
+### Implications for the Original Spec
+
+The original spec's premise—that context distillation can transfer few-shot learning ability—may be flawed:
+
+1. **Context distillation is useful for format/style transfer**, not capability transfer
+2. **The GKD paper's results may not generalize** to scenarios with large capability gaps
+3. **Size distillation requires different techniques** than context distillation
+
+For practitioners wanting to "distill" few-shot prompting ability: you're likely better off with retrieval-augmented generation or prompt caching than distillation.
 
 ---
 
@@ -236,16 +272,25 @@ The experiment was surprisingly cheap for the insight gained. The key finding—
 
 ---
 
-## The Simple Answer
+## Answering the Original Spec
 
-> How does on-policy distillation compare to off-policy distillation?
+The [project spec](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/on-policy-context-distillation.md) asked: *How do different context distillation methodologies compare?*
 
-**On-policy is strictly better for knowledge distillation with capability gaps. Never mix them.**
+**For context distillation (same model ± context)**:
+- Neither on-policy nor off-policy works well for capability transfer
+- Off-policy achieves high format similarity (0.97 eval) but 0% downstream accuracy
+- On-policy GKD fares slightly better (2-6%) but still far below useful
+- Context distillation is useful for style/format, not reasoning ability
 
-The distribution cliff is not a tuning problem. It's a fundamental mismatch between what off-policy teaches (token mimicry) and what on-policy expects (coherent generation).
+**For size distillation (small ← large model)**:
+- On-policy is strictly better than off-policy
+- Hybrid mode catastrophically collapses
+- Teacher seeding achieves 58-71% GSM8K accuracy
 
-Teacher seeding provides the benefits of guided training without the corruption of off-policy objectives. Use it.
+**The deeper insight**: The GKD paper's hybrid recommendation assumes the student can generate coherent outputs after off-policy training. With large capability gaps, this assumption fails—the student learns to mimic tokens without understanding them, producing garbage when forced to generate independently.
+
+Teacher seeding provides the benefits of guided training without the corruption of off-policy objectives. For knowledge distillation with capability gaps, use it.
 
 ---
 
-*160-run experiment across Qwen and Llama families using Tinker API. Full methodology at [github.com/bledden/context-distillation-tinkerideas](https://github.com/bledden/context-distillation-tinkerideas).*
+*160-run experiment across Qwen and Llama families using Tinker API. Full methodology at [github.com/bledden/context-distillation-tinkerideas](https://github.com/bledden/context-distillation-tinkerideas). W&B report at [wandb.ai/facilitair/context-distillation](https://wandb.ai/facilitair/context-distillation).*
