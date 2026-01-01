@@ -653,10 +653,216 @@ def generate_open_character_visualizations():
     print(f"Open Character visualizations saved to {out_dir}")
 
 
+# =============================================================================
+# CONTEXT DISTILLATION VISUALIZATIONS
+# =============================================================================
+
+def generate_context_distillation_visualizations():
+    """Generate visualizations for Context Distillation blog post."""
+    out_dir = os.path.join(OUTPUT_DIR, 'public/images/context-distillation')
+    os.makedirs(out_dir, exist_ok=True)
+
+    # 1. Distribution Cliff - the key failure mode
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    steps = np.arange(0, 101)
+
+    # Off-policy phase (0-49): stable training
+    off_policy_steps = steps[:50]
+    off_policy_scores = 0.5 + np.random.randn(50) * 0.05
+    off_policy_scores = np.clip(off_policy_scores, 0.4, 0.6)
+
+    # Phase transition and collapse (50-100)
+    on_policy_steps = steps[50:]
+    # Sudden drop at transition, then collapse to 0
+    transition_scores = np.zeros(51)
+    transition_scores[0] = 0.5  # Last stable point
+    transition_scores[1] = 0.17  # Sudden drop
+    transition_scores[2:10] = np.linspace(0.17, 0.05, 8)
+    transition_scores[10:] = np.random.rand(41) * 0.02  # Collapsed near 0
+
+    # Plot with different colors for phases
+    ax.plot(off_policy_steps, off_policy_scores, 'b-', linewidth=2.5, label='Off-Policy Phase')
+    ax.plot(on_policy_steps, transition_scores, 'r-', linewidth=2.5, label='On-Policy Phase (Collapsed)')
+
+    # Add phase transition marker
+    ax.axvline(x=50, color='black', linestyle='--', linewidth=2, alpha=0.7)
+    ax.annotate('PHASE\nTRANSITION', xy=(50, 0.55), xytext=(50, 0.7),
+                fontsize=11, ha='center', fontweight='bold',
+                arrowprops=dict(arrowstyle='->', color='black', lw=2))
+
+    # Add collapse annotation
+    ax.annotate('COLLAPSE\n(unrecoverable)', xy=(70, 0.02), xytext=(80, 0.25),
+                fontsize=10, ha='center', color='red',
+                arrowprops=dict(arrowstyle='->', color='red', lw=1.5))
+
+    ax.set_xlabel('Training Step', fontsize=12)
+    ax.set_ylabel('Eval Score', fontsize=12)
+    ax.set_title('The Distribution Cliff: Hybrid Distillation Fails', fontsize=14, fontweight='bold')
+    ax.set_ylim(-0.05, 0.8)
+    ax.legend(loc='upper right', fontsize=10)
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, 'distribution_cliff.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # 2. Method Comparison - bar chart for both model families
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    methods = ['teacher_seeded', 'on_policy_gkd', 'extended_on_policy', 'replay_buffer',
+               'hybrid', 'mixture', 'kl_anchored', 'reverse_curriculum']
+    method_labels = ['Teacher\nSeeded', 'On-Policy\nGKD', 'Extended\nOn-Policy', 'Replay\nBuffer',
+                     'Hybrid', 'Mixture', 'KL\nAnchored', 'Reverse\nCurriculum']
+
+    qwen_accuracy = [58.6, 53.2, 51.0, 2.8, 0.0, 0.0, 0.0, 0.8]
+    llama_accuracy = [71.0, 67.4, 64.4, 7.4, 0.0, 0.0, 0.0, 0.0]
+
+    # Color by whether method has off-policy component
+    colors = ['#2ecc71', '#2ecc71', '#2ecc71', '#f39c12', '#e74c3c', '#e74c3c', '#e74c3c', '#e74c3c']
+
+    # Qwen subplot
+    ax = axes[0]
+    bars = ax.bar(method_labels, qwen_accuracy, color=colors, edgecolor='black', linewidth=1.2)
+    ax.set_ylabel('GSM8K Accuracy (%)', fontsize=11)
+    ax.set_title('Qwen Family (4B ← 30B)', fontsize=13, fontweight='bold')
+    ax.set_ylim(0, 80)
+    ax.tick_params(axis='x', rotation=45)
+
+    # Add value labels
+    for bar, val in zip(bars, qwen_accuracy):
+        if val > 0:
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                    f'{val:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+    # Llama subplot
+    ax = axes[1]
+    bars = ax.bar(method_labels, llama_accuracy, color=colors, edgecolor='black', linewidth=1.2)
+    ax.set_ylabel('GSM8K Accuracy (%)', fontsize=11)
+    ax.set_title('Llama Family (8B ← 70B)', fontsize=13, fontweight='bold')
+    ax.set_ylim(0, 80)
+    ax.tick_params(axis='x', rotation=45)
+
+    # Add value labels
+    for bar, val in zip(bars, llama_accuracy):
+        if val > 0:
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                    f'{val:.1f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+    # Add legend
+    legend_elements = [
+        mpatches.Patch(facecolor='#2ecc71', edgecolor='black', label='Pure On-Policy (Works)'),
+        mpatches.Patch(facecolor='#f39c12', edgecolor='black', label='Partial Off-Policy'),
+        mpatches.Patch(facecolor='#e74c3c', edgecolor='black', label='Has Off-Policy (Collapsed)')
+    ]
+    fig.legend(handles=legend_elements, loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.02), fontsize=10)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.88)
+    plt.savefig(os.path.join(out_dir, 'method_comparison.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # 3. Teacher Seeding curriculum visualization
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    steps = np.arange(0, 51)
+    teacher_tokens = np.maximum(0, 20 - (steps * 20 / 50))  # Decay from 20 to 0
+    student_tokens = 100 - teacher_tokens  # Student generates the rest (assuming 100 token response)
+
+    ax.fill_between(steps, 0, teacher_tokens, alpha=0.7, color='#3498db', label='Teacher Prefix')
+    ax.fill_between(steps, teacher_tokens, 100, alpha=0.7, color='#2ecc71', label='Student Generation')
+
+    ax.set_xlabel('Training Step', fontsize=12)
+    ax.set_ylabel('Tokens', fontsize=12)
+    ax.set_title('Teacher Seeding: Gradual Handoff (No Hard Transition)', fontsize=14, fontweight='bold')
+    ax.legend(loc='right', fontsize=11)
+    ax.set_ylim(0, 105)
+
+    # Add annotations
+    ax.annotate('Step 0:\nTeacher guides first 20 tokens', xy=(0, 20), xytext=(5, 50),
+                fontsize=9, ha='left',
+                arrowprops=dict(arrowstyle='->', color='#3498db', lw=1.5))
+    ax.annotate('Step 50:\nStudent generates all', xy=(50, 5), xytext=(40, 35),
+                fontsize=9, ha='center',
+                arrowprops=dict(arrowstyle='->', color='#2ecc71', lw=1.5))
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, 'teacher_seeding.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # 4. Why off-policy fails - conceptual diagram
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    # Phase 1: Off-policy learning
+    ax = axes[0]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.set_title('Phase 1: Off-Policy\n(Token Mimicry)', fontsize=12, fontweight='bold', color='#3498db')
+
+    # Teacher distribution
+    teacher_circle = plt.Circle((5, 7), 1.5, color='#3498db', alpha=0.3)
+    ax.add_patch(teacher_circle)
+    ax.text(5, 7, 'Teacher\nTokens', ha='center', va='center', fontsize=10)
+
+    # Student trying to match
+    student_circle = plt.Circle((5, 3), 1.2, color='#e74c3c', alpha=0.3)
+    ax.add_patch(student_circle)
+    ax.text(5, 3, 'Student\nMimics', ha='center', va='center', fontsize=10)
+
+    # Arrow showing learning
+    ax.annotate('', xy=(5, 5.5), xytext=(5, 4.2),
+                arrowprops=dict(arrowstyle='->', color='gray', lw=2))
+    ax.text(6.5, 4.8, 'Learn to\npredict tokens', fontsize=9, color='gray')
+
+    # Phase 2: Transition
+    ax = axes[1]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.set_title('Phase 2: Transition\n(Garbage Generation)', fontsize=12, fontweight='bold', color='#f39c12')
+
+    # Student generating garbage
+    for i in range(5):
+        x = 3 + np.random.rand() * 4
+        y = 3 + np.random.rand() * 4
+        garbage = plt.Circle((x, y), 0.3, color='#e74c3c', alpha=0.5)
+        ax.add_patch(garbage)
+    ax.text(5, 7.5, '"Teacher-like"\ngarbage', ha='center', va='center', fontsize=10, color='#e74c3c')
+    ax.text(5, 1.5, 'Looks similar,\nsemantically broken', ha='center', va='center', fontsize=9, color='gray', style='italic')
+
+    # Phase 3: Collapse
+    ax = axes[2]
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.set_title('Phase 3: Collapse\n(Degenerate Output)', fontsize=12, fontweight='bold', color='#e74c3c')
+
+    # Collapsed to single point
+    collapse_point = plt.Circle((5, 5), 0.5, color='#e74c3c', alpha=0.8)
+    ax.add_patch(collapse_point)
+    ax.text(5, 5, '∅', ha='center', va='center', fontsize=20, color='white', fontweight='bold')
+    ax.text(5, 2, 'Empty/repetitive\noutput (0% accuracy)', ha='center', va='center', fontsize=10, color='#e74c3c')
+
+    # Large X over the whole thing
+    ax.plot([1, 9], [1, 9], 'r-', linewidth=3, alpha=0.5)
+    ax.plot([1, 9], [9, 1], 'r-', linewidth=3, alpha=0.5)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, 'why_offpolicy_fails.png'), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    print(f"Context Distillation visualizations saved to {out_dir}")
+
+
 if __name__ == '__main__':
     print("Generating blog visualizations...")
     generate_cai_visualizations()
     generate_gan_visualizations()
     generate_memorization_visualizations()
     generate_open_character_visualizations()
+    generate_context_distillation_visualizations()
     print("Done!")
