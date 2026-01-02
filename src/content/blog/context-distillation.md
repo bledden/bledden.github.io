@@ -80,10 +80,10 @@ We tested 8 distillation methods across two model families:
 
 **Methods tested**:
 - `on_policy_gkd` - Pure on-policy (baseline)
-- `hybrid` - Off-policy → on-policy transition
+- `hybrid` - Off-policy → on-policy transition (hard two-stage)
 - `extended_on_policy` - More training steps
 - `teacher_seeded` - Decaying teacher prefix
-- `mixture` - Blend objectives each step
+- `mixture` - Deterministic weighted loss mixing (not GKD's stochastic λ-mix)
 - `replay_buffer` - Experience replay
 - `kl_anchored` - KL penalty to initial weights
 - `reverse_curriculum` - On-policy first, off-policy last
@@ -158,15 +158,17 @@ total_loss = off_policy_loss + beta * D_KL(current || initial)
 
 **Result**: Still collapsed. The KL penalty slows drift but doesn't prevent the fundamental mimicry-without-reasoning problem.
 
-### Mixing Objectives
+### Mixing Objectives (Deterministic Weighting)
 
-We blended off-policy and on-policy signals each step:
+We tested deterministic weighted loss mixing each step:
 
 ```python
 loss = 0.3 * off_policy_loss + 0.7 * gkd_loss
 ```
 
 **Result**: Still collapsed. Even 30% off-policy signal is enough to corrupt generation over 100 steps.
+
+**Note**: This differs from GKD's Algorithm 1 λ-mix, which uses *stochastic per-batch selection* (sample student-generated data with probability λ, teacher dataset with probability 1-λ). Our approach applies both losses simultaneously with fixed weights. The stochastic formulation might behave differently, but we didn't test it—our "mixture" is a simpler deterministic variant.
 
 ### Experience Replay
 
