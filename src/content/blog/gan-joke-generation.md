@@ -1,7 +1,7 @@
 ---
 title: 'GAN-Style Training for Jokes: When Metrics Lie'
 description: 'We trained a GAN to generate jokes. The metrics looked great. The jokes were terrible. A cautionary tale about evaluation gaps in creative generation.'
-pubDate: 'Dec 31 2025'
+pubDate: 'Jan 01 2026 05:00'
 heroImage: '../../assets/gan-hero.png'
 ---
 

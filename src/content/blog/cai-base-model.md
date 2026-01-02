@@ -1,7 +1,7 @@
 ---
 title: 'Constitutional AI from Base Models: Can You Train Safety Without Instruction Tuning?'
 description: 'We replicated Constitutional AI starting from a raw base model. The pipeline works, but DPO needs more than 42 training pairs to show improvement over SFT alone.'
-pubDate: 'Dec 31 2025'
+pubDate: 'Jan 01 2026 06:00'
 heroImage: '../../assets/cai-hero.png'
 ---
 

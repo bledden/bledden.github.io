@@ -1,7 +1,7 @@
 ---
 title: 'Why Supervised Learning is 909% More Efficient Than RL: An Empirical Validation'
 description: 'We tested information-theoretic predictions about learning efficiency. Supervised learning converges in 2 episodes regardless of problem size. RL scales with n^0.89. The theory holds.'
-pubDate: 'Dec 31 2025'
+pubDate: 'Jan 01 2026 11:00'
 heroImage: '../../assets/memorization-hero.png'
 ---
 

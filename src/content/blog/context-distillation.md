@@ -1,7 +1,7 @@
 ---
 title: 'The Distribution Cliff: Why Hybrid Distillation Catastrophically Fails'
 description: 'We tested 8 distillation methods across 160 runs. Any off-policy component causes collapse. Pure on-policy with teacher seeding achieves 71% GSM8K accuracy.'
-pubDate: 'Jan 01 2026'
+pubDate: 'Jan 02 2026'
 heroImage: '../../assets/context-distillation-hero.png'
 ---
 
