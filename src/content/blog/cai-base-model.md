@@ -5,7 +5,7 @@ pubDate: 2026-01-01T06:00:00
 heroImage: '../../assets/cai-hero.png'
 ---
 
-Constitutional AI (CAI) is Anthropic's approach to training helpful, harmless AI systems using a set of principles—a "constitution"—rather than pure human preference data. But most implementations start from instruction-tuned models, which may introduce biases from that initial training.
+[Constitutional AI](https://arxiv.org/abs/2212.08073) (CAI) is Anthropic's approach to training helpful, harmless AI systems using a set of principles—a "constitution"—rather than pure human preference data. But most implementations start from instruction-tuned models, which may introduce biases from that initial training.
 
 **The question**: Can we train CAI starting from a raw base model, with no instruction-tuning contamination?
 
@@ -135,4 +135,4 @@ The open question: At what data scale does DPO become beneficial for CAI? Our 42
 
 ---
 
-*10-seed experiment on Tinker platform. Full methodology at [github.com/bledden/cai-tinkerideas](https://github.com/bledden/cai-tinkerideas).*
+*10-seed experiment on Tinker platform testing the [Thinking Machines Lab proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/cai-base-model.md). Full methodology at [github.com/bledden/cai-tinkerideas](https://github.com/bledden/cai-tinkerideas).*

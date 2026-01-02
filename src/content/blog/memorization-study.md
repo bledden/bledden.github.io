@@ -5,7 +5,7 @@ pubDate: 2026-01-01T11:00:00
 heroImage: '../../assets/memorization-hero.png'
 ---
 
-The "LoRA without regret" blog post makes a bold claim: supervised learning receives log(n) bits of information per episode, while reinforcement learning receives only O(1) bits. This predicts that supervised learning should be dramatically more sample-efficient.
+The ["LoRA without regret"](https://thinkingmachines.ai/blog/lora-without-regret) blog post makes a bold claim: supervised learning receives log(n) bits of information per episode, while reinforcement learning receives only O(1) bits. This predicts that supervised learning should be dramatically more sample-efficient.
 
 We tested this empirically with 60 training runs across three learning methods. **The theory holds.**
 
@@ -200,4 +200,4 @@ When you have labels, use them.
 
 ---
 
-*10-seed experiments on MLP (local) and Tinker (LLM). Full methodology at [github.com/bledden/memorization-tinkerideas](https://github.com/bledden/memorization-tinkerideas).*
+*10-seed experiments on MLP (local) and Tinker (LLM) testing the [Thinking Machines Lab proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/memorization-study.md). Full methodology at [github.com/bledden/memorization-tinkerideas](https://github.com/bledden/memorization-tinkerideas).*

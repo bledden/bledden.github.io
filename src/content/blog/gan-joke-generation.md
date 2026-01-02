@@ -165,4 +165,4 @@ This is a general problem. If you're building creative generation systems, inves
 
 ---
 
-*10-seed experiment on Tinker platform. Full methodology at [github.com/bledden/gan-tinkerideas](https://github.com/bledden/gan-tinkerideas).*
+*10-seed experiment on Tinker platform testing the [Thinking Machines Lab proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/gan-joke-generation.md). Full methodology at [github.com/bledden/gan-tinkerideas](https://github.com/bledden/gan-tinkerideas).*

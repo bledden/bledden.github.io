@@ -212,4 +212,4 @@ For anyone building character-based AI systems, this methodology provides a prin
 
 ---
 
-*47-run experiment on Tinker platform. Full methodology at [github.com/bledden/open-character-tinkerideas](https://github.com/bledden/open-character-tinkerideas).*
+*47-run experiment on Tinker platform testing the [Thinking Machines Lab proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/replicate-open-character-training.md). Full methodology at [github.com/bledden/open-character-tinkerideas](https://github.com/bledden/open-character-tinkerideas).*

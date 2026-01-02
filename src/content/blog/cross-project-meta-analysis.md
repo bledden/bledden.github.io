@@ -113,7 +113,7 @@ The problem is the phase transition itself, not capability mismatch. Off-policy 
 
 ## Finding 5: Supervised Learning is 909% More Efficient Than RL
 
-The Memorization Study (10-seed MLP experiment) validated information-theoretic predictions from the "LoRA without regret" blog post:
+The Memorization Study (10-seed MLP experiment) validated information-theoretic predictions from the ["LoRA without regret"](https://thinkingmachines.ai/blog/lora-without-regret) blog post:
 
 | N (values) | Supervised | RL-EoE | RL-Step | SL Advantage |
 |:----------:|:----------:|:------:|:-------:|:------------:|
@@ -137,7 +137,7 @@ The LLM LoRA experiment failed (2.5% convergence across 120 runs)—but this was
 
 ## Finding 6: Token-Level Noise Destroys LLM Training (Negative Result)
 
-The Noisy Student experiment tested whether noise augmentation from computer vision transfers to LLM distillation:
+The Noisy Student experiment tested whether noise augmentation from computer vision ([Xie et al. 2020](https://arxiv.org/abs/1911.04252)) transfers to LLM distillation:
 
 | Condition | Mean Loss | Std Dev | 95% CI |
 |-----------|-----------|---------|--------|
