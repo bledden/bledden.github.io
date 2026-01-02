@@ -1,7 +1,7 @@
 ---
 title: 'Seven Patterns From 300+ ML Evaluation Runs'
 description: 'Cross-project analysis of ML experiments reveals patterns about model scaling, distillation dynamics, constitutional training, and when negative results matter.'
-pubDate: 'Dec 31 2025'
+pubDate: 2025-12-31
 heroImage: '../../assets/meta-analysis-hero.png'
 ---
 
