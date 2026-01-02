@@ -15,40 +15,49 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 		<main>
 			<h1>Blake Ledden</h1>
 			<p>
-				I build AI systems that decide how to use other AI systems. Currently founder at
-				<strong>Facilitair.ai</strong>, focused on model orchestration, training dynamics, and the
-				meta-problem of "how do you use AI effectively."
+				I run experiments on LLM training dynamics and write about what I find. Currently focused on
+				distillation, constitutional training, and reinforcement learning — with an emphasis on
+				statistical rigor (10-seed validation, effect sizes, confidence intervals).
 			</p>
 
-			<h2>Current Work</h2>
+			<h2>Recent Research</h2>
 			<p>
-				At Facilitair, I've trained 20+ model versions for AI orchestration (44.7M-5.75B params), achieving
-				90%+ routing accuracy with &lt;100ms latency. The system predicts execution strategy, task domain,
-				required capabilities, and optimal model simultaneously.
+				I recently completed a series of experiments on the <a href="https://thinkingmachines.ai/tinker/">Tinker platform</a>,
+				testing proposals from the <a href="https://github.com/thinking-machines-lab/tinker-project-ideas">Thinking Machines Lab</a>.
+				Key findings:
 			</p>
-			<p>Recent experiments (7 projects, 300+ runs, 10-seed statistical validation):</p>
 			<ul>
-				<li><strong>Open Character Training</strong> — Constitutional DPO improves character alignment +39%, reduces adversarial break rate 65%→35%</li>
-				<li><strong>Phase transition discovery</strong> — Hybrid distillation collapses at mode transition regardless of capability gap (KL spikes 361x in one step)</li>
-				<li><strong>SL vs RL efficiency</strong> — Supervised learning converges in O(1) episodes, RL scales as O(n^0.89) for memorization tasks</li>
-				<li><strong>Negative result</strong> — Token-level noise augmentation significantly hurts LLM training (p=0.0018, Hedges' g=1.57)</li>
+				<li>
+					<strong><a href="/blog/context-distillation">The Distribution Cliff</a></strong> —
+					Hybrid distillation (off-policy → on-policy) catastrophically fails with capability gaps.
+					160 runs across Qwen and Llama families. The GKD paper's recommendation doesn't generalize.
+				</li>
+				<li>
+					<strong><a href="/blog/open-character-training">Open Character Training</a></strong> —
+					Constitutional DPO improves character alignment +39%, reduces adversarial break rate from 65% to 35%.
+					Prompt distillation works (84% success without system prompts). 47 runs, 5 personas.
+				</li>
+				<li>
+					<strong><a href="/blog/memorization-study">SL vs RL Efficiency</a></strong> —
+					Empirically validated "LoRA without regret" theory. Supervised learning converges in 2 episodes
+					regardless of problem size. RL scales as n^0.89. Effect size: g = -8.2.
+				</li>
 			</ul>
+			<p>
+				<a href="/blog">See all posts →</a>
+			</p>
+
+			<h2>Facilitair</h2>
+			<p>
+				I'm also founder at <strong>Facilitair.ai</strong>, building AI orchestration systems.
+				Trained 20+ model versions (44.7M-5.75B params) achieving 90%+ routing accuracy with &lt;100ms latency.
+				The system predicts execution strategy, task domain, required capabilities, and optimal model simultaneously.
+			</p>
 
 			<h2>Background</h2>
 			<p>
-				Previously 4+ years at Apple, mostly on authentication and developer tooling. Before that,
-				a mix of startups and IT roles where I kept finding problems that could be automated and building
-				solutions for them.
-			</p>
-
-			<h2>This Blog</h2>
-			<p>
-				I write about patterns I find in my experiments — the kind of thing that only becomes visible after
-				running 250+ evaluation runs across multiple projects. Expect data, visualizations, and honest assessments
-				of what worked and what didn't.
-			</p>
-			<p>
-				<a href="/blog">Read the blog →</a>
+				Previously 4+ years at Apple on authentication and developer tooling. Before that,
+				startups and IT roles where I kept finding problems that could be automated.
 			</p>
 
 			<h2>Links</h2>
