@@ -129,9 +129,21 @@ These would transfer to any GAN-style text generation task.
 
 The low originality (2.8/10) might be a **model size problem**, not a training dynamics problem. Llama-3.2-3B may lack the creative capacity for original humor.
 
-**Evidence**: The same model struggles with structured output in other tasks (see "3B cliff" in our cross-project analysis). Creative generation may require similar minimum capacity.
+**Evidence**: The same model struggles with structured output in other tasks (see "3B cliff" in our cross-project analysis). Creative generation may require similar minimum capacity. This aligns with research on the ["small model learnability gap"](https://arxiv.org/abs/2502.12143)—models ≤3B parameters don't consistently benefit from complex reasoning or distillation.
 
 **V3 Proposal**: Test with Llama-3.1-8B-Instruct before concluding adversarial training can't achieve high originality.
+
+---
+
+## Related Work
+
+Our findings align with existing research on LLM humor generation:
+
+- [Jentzsch & Kersting (2023)](https://arxiv.org/abs/2403.00794) found that "LLMs struggle to generate humor" but can effectively edit humor away—suggesting generation requires capabilities beyond pattern matching.
+- The [CleanComedy paper](https://arxiv.org/abs/2412.09203) trained Llama-3.1-8B for humor but noted that "generative humor generally remains an open research problem."
+- Research on [structured thought for humor](https://arxiv.org/abs/2410.10370) proposes that a reward model is necessary since "there is currently no expert model of humor."
+
+Our contribution is documenting the specific failure mode where automated metrics (fooling rate, uniqueness) pass while output quality fails—a cautionary tale for anyone evaluating creative generation.
 
 ---
 

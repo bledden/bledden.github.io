@@ -52,7 +52,7 @@ This wasn't an oversight—it was budget-driven iteration. While debugging ceili
 
 **Earlier runs told a different story**: Before we fixed all the bugs, a December 25 run (8 seeds) showed 50.3% ASR improvement. The high variance across seeds (4% to 71% improvement) was itself a warning sign that noise dominated signal.
 
-**The takeaway**: At small data scale, SFT does all the heavy lifting. DPO needs volume.
+**The takeaway**: At small data scale, SFT does all the heavy lifting. DPO needs volume. This aligns with [Mirzadeh et al.'s finding](https://ojs.aaai.org/index.php/AAAI/article/view/5963) that knowledge transfer degrades when there's a large capacity gap—in our case, the "gap" is between our 42 pairs and the signal needed for generalization.
 
 ---
 
@@ -121,6 +121,14 @@ prompt_tokens = self.tokenizer.apply_chat_template(
 | 161K pairs (original) | $8,000+ | Full-scale |
 
 ![Data Scale Analysis](/images/cai/data_scale_analysis.png)
+
+---
+
+## Related Work
+
+Most CAI implementations start from instruction-tuned models. [Huang et al. (2024)](https://arxiv.org/abs/2504.04918) tested Constitutional AI with Llama 3-8B and observed "clear signs of model collapse" in smaller models during self-improvement—suggesting our choice of Llama-3.2-3B may have been near the minimum viable size.
+
+The [HuggingFace CAI tutorial](https://huggingface.co/blog/constitutional_ai) uses DPO instead of PPO (as we did), but trains on substantially more data. Our 42-pair experiment confirms their implicit assumption: DPO needs volume to work.
 
 ---
 

@@ -67,7 +67,9 @@ const posts = postOrder
 			.title {
 				margin: 0;
 				color: rgb(var(--black));
-				line-height: 1;
+				line-height: 1.2;
+				word-break: normal;
+				overflow-wrap: normal;
 			}
 			.date {
 				margin: 0;
@@ -92,7 +94,10 @@ const posts = postOrder
 					margin-bottom: 0;
 				}
 				ul li:first-child .title {
-					font-size: 1.563em;
+					font-size: 1.4em;
+				}
+				.title {
+					font-size: 1rem;
 				}
 			}
 		</style>

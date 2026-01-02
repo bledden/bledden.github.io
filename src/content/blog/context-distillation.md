@@ -293,4 +293,14 @@ The [project spec](https://github.com/thinking-machines-lab/tinker-project-ideas
 
 ---
 
+## Related Work
+
+**Important context on the GKD paper**: [Agarwal et al. (2024)](https://arxiv.org/abs/2306.13649) tested GKD exclusively on **encoder-decoder models** (T5-small/base/large ← T5-XL, up to 38x size ratio). They did not evaluate decoder-only architectures like Llama or Qwen. Encoder-decoder models have fundamentally different generation dynamics—the encoder provides conditioning that may stabilize generation even after distribution drift. Our experiments extend GKD to decoder-only LLMs, where hybrid mode appears to fail catastrophically. This is not a contradiction of their results, but a finding that their hybrid recommendation may not generalize to modern decoder-only architectures.
+
+The capability gap problem in distillation is well-documented. [Mirzadeh et al. (2020)](https://ojs.aaai.org/index.php/AAAI/article/view/5963) showed that "student network performance degrades when the gap between student and teacher is large," proposing Teacher Assistant models as intermediaries. [Speculative Knowledge Distillation](https://arxiv.org/abs/2410.11325) addresses this by dynamically adjusting on-policy vs off-policy balance based on the distribution gap.
+
+Our contribution is documenting the specific failure mode at the phase transition in decoder-only LLMs—the instantaneous collapse when switching from off-policy to on-policy, with KL divergence spiking 361x in a single step. This appears to be a distinct phenomenon from gradual capability gap degradation, and may be specific to decoder-only architectures.
+
+---
+
 *160-run experiment across Qwen and Llama families using Tinker API. Full methodology at [github.com/bledden/context-distillation-tinkerideas](https://github.com/bledden/context-distillation-tinkerideas). W&B report at [wandb.ai/facilitair/context-distillation](https://wandb.ai/facilitair/context-distillation).*

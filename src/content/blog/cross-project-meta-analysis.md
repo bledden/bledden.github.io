@@ -192,4 +192,4 @@ These patterns emerged across 7 projects and 300+ runs with 10-seed statistical 
 
 ---
 
-*Data sources and exact file references available in the [full analysis](https://github.com/bledden/Corch_by_Fac/blob/main/CROSS_PROJECT_META_ANALYSIS.md).*
+*Data sources and exact file references available in the [full analysis](/CROSS_PROJECT_META_ANALYSIS.md).*
