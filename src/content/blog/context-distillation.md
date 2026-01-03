@@ -1,5 +1,5 @@
 ---
-title: 'The Distribution Cliff: Why Hybrid Distillation Catastrophically Fails'
+title: 'The Distribution Cliff: Why Hybrid Distillation Fails on Decoder-Only LLMs'
 description: 'We tested 8 distillation methods across 160 runs. Any off-policy component causes collapse. Pure on-policy with teacher seeding achieves 71% GSM8K accuracy.'
 pubDate: 2026-01-02
 heroImage: '../../assets/context-distillation-hero.png'
