@@ -438,7 +438,7 @@ def generate_memorization_visualizations():
     plt.close()
 
     # 5. Effect size visualization - redesigned for clarity
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
 
     comparisons = ['SL vs RL-EoE', 'SL vs RL-Step']
     hedges_g = [8.2, 15.3]  # Using absolute values
@@ -458,25 +458,26 @@ def generate_memorization_visualizations():
     ax.axvspan(0.5, 0.8, alpha=0.2, color='orange', label='Large (0.5-0.8)')
     ax.axvspan(0.8, 18, alpha=0.15, color='red', label='Very Large (> 0.8)')
 
-    # Add threshold lines without overlapping labels - use legend instead
-    ax.axvline(x=0.8, color='#333333', linestyle='--', alpha=0.7, linewidth=1.5, label='"Large" threshold (0.8)')
+    # Add threshold line at 0.8
+    ax.axvline(x=0.8, color='#333333', linestyle='--', alpha=0.7, linewidth=1.5)
 
     # Add value labels on bars
     for bar, g in zip(bars, hedges_g):
         ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height()/2,
                 f'g = {g:.1f}', ha='left', va='center', fontweight='bold', fontsize=12, color='#222222')
 
-    # Add annotation showing how massive these are
+    # Add annotation with white background box for readability
     ax.annotate('10-19x larger than\n"large" threshold (0.8)',
                 xy=(8.2, 0), xytext=(12, 0.7),
                 fontsize=11, ha='center', fontweight='bold',
                 arrowprops=dict(arrowstyle='->', color='#c0392b', lw=2),
-                color='#c0392b')
+                color='#c0392b',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#c0392b', alpha=0.95))
 
     ax.set_xlim(0, 18)
     ax.set_ylim(-0.6, 1.8)
 
-    # Add a legend for the threshold zones
+    # Add a legend outside the plot on the left
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor='green', alpha=0.3, label='Small (< 0.2)'),
@@ -484,13 +485,15 @@ def generate_memorization_visualizations():
         Patch(facecolor='orange', alpha=0.3, label='Large (0.5-0.8)'),
         Patch(facecolor='red', alpha=0.2, label='Very Large (> 0.8)')
     ]
-    ax.legend(handles=legend_elements, loc='upper right', fontsize=9, framealpha=0.95)
+    ax.legend(handles=legend_elements, loc='upper left', bbox_to_anchor=(-0.25, 1.0),
+              fontsize=9, framealpha=0.95, title='Effect Size Zones', title_fontsize=10)
 
     # Add a note about interpretation - darker text color for readability
     ax.text(9, -0.45, 'Effect sizes > 0.8 are considered "large" in social sciences.\nThese results are 10-19x that threshold.',
             fontsize=10, color='#333333', style='italic', ha='center', fontweight='medium')
 
     plt.tight_layout()
+    plt.subplots_adjust(left=0.22)  # Make room for legend on left
     plt.savefig(os.path.join(out_dir, 'effect_sizes.png'), dpi=150, bbox_inches='tight')
     plt.close()
 
