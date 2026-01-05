@@ -1,13 +1,13 @@
 ---
 title: 'Empirically Validating the Information-Theoretic Gap Between SL and RL'
-description: 'We tested information-theoretic predictions about learning efficiency. Supervised learning converges in 2 episodes regardless of problem size. RL scales with n^0.89. The theory holds.'
+description: 'I tested information-theoretic predictions about learning efficiency. Supervised learning converges in 2 episodes regardless of problem size. RL scales with n^0.89. The theory holds.'
 pubDate: 2026-01-01T11:00:00
 heroImage: '../../assets/memorization-hero.png'
 ---
 
 The ["LoRA without regret"](https://thinkingmachines.ai/blog/lora-without-regret) blog post makes a bold claim: supervised learning receives log(n) bits of information per episode, while reinforcement learning receives only O(1) bits. This predicts that supervised learning should be dramatically more sample-efficient.
 
-We tested this empirically with 60 training runs across three learning methods. **The theory holds.**
+I tested this empirically with 60 training runs across three learning methods. **The theory holds.**
 
 ---
 
@@ -60,7 +60,7 @@ The theoretical prediction was 1 episode. The extra episode is gradient descent 
 
 RL with binary reward scaled as **n^0.89** (R² = 0.967).
 
-The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent suggests the model is slightly better than random search. It's learning some structure, but still fundamentally limited by the 1-bit-per-episode bottleneck.
+The theoretical minimum is n^1.0 (linear in problem size). The 0.89 exponent suggests the model is slightly better than random search. It's learning some structure, but still fundamentally limited by the 1-bit-per-episode bottleneck.
 
 ![RL Scaling Fit](/images/memorization/rl_scaling_fit.png)
 
@@ -68,9 +68,9 @@ The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent sug
 
 Distance-based rewards ("you're getting warmer") should help, right?
 
-**No.** RL-Step failed completely for N ≥ 100, hitting our 10,000-episode timeout without converging.
+**No.** RL-Step failed completely for N ≥ 100, hitting the 10,000-episode timeout without converging.
 
-**What the timeout means**: We can't determine the true episode count for RL-Step at N ≥ 100. It's at least 10,000, but could be arbitrarily higher. The N=10 result (7,004 episodes) suggests the scaling is worse than RL-EoE, but we can't fit a proper scaling law with only one valid data point.
+**What the timeout means**: I can't determine the true episode count for RL-Step at N ≥ 100. It's at least 10,000, but could be arbitrarily higher. The N=10 result (7,004 episodes) suggests the scaling is worse than RL-EoE, but I can't fit a proper scaling law with only one valid data point.
 
 **Why it failed**: Reward hacking. The model learned to exploit the distance metric (getting partial credit for being "close") without actually solving the task. Instead of learning the target, it learned to game the reward signal. This is a known failure mode of shaped rewards, which can create local optima that don't correspond to task completion.
 
@@ -93,7 +93,7 @@ These are *massive* effect sizes. This isn't a subtle difference; it's a fundame
 
 ## The W&B Training Curves
 
-From our tracking across multiple sweeps:
+From tracking across multiple sweeps:
 
 **Supervised learning (all LoRA ranks)**:
 - Loss drops from ~20 to near-zero within first 100 steps
@@ -113,7 +113,7 @@ The curves show supervised learning as a step function (instant convergence) whi
 
 ## The LLM Experiment (Why It Failed)
 
-We also tried testing this with LLMs and LoRA adapters. The hypothesis: if RL receives less information per episode, it might need *lower* LoRA rank (less capacity for noise).
+I also tried testing this with LLMs and LoRA adapters. The hypothesis: if RL receives less information per episode, it might need *lower* LoRA rank (less capacity for noise).
 
 **Results**: 2.5% convergence rate (3/120 runs)
 
@@ -209,9 +209,9 @@ The information-theoretic framework comes from ["LoRA without regret"](https://t
 This connects to broader work on sample complexity in learning:
 - [Sample Complexity of Reinforcement Learning](https://arxiv.org/abs/1706.06491) establishes theoretical lower bounds for RL
 - [On the Sample Complexity of Learning](https://dl.acm.org/doi/10.1145/174644.174647) (Blumer et al. 1989) provides foundational PAC learning results
-- The reward hacking we observed in RL-Step relates to [Specification Gaming](https://arxiv.org/abs/2109.13916) literature
+- The reward hacking observed in RL-Step relates to [Specification Gaming](https://arxiv.org/abs/2109.13916) literature
 
-**Our contribution**: Empirically validating the specific log(n) vs 1 bit prediction with controlled experiments, and documenting shaped reward failure as a practical hazard.
+**My contribution**: Empirically validating the specific log(n) vs 1 bit prediction with controlled experiments, and documenting shaped reward failure as a practical hazard.
 
 ---
 
@@ -219,8 +219,8 @@ This connects to broader work on sample complexity in learning:
 
 The information-theoretic predictions from "LoRA without regret" are empirically validated:
 
-1. **Supervised learning converges in O(1) episodes** (we measured: 2 episodes)
-2. **RL with binary reward converges in O(n^β) episodes** (we measured: β = 0.89)
+1. **Supervised learning converges in O(1) episodes** (I measured: 2 episodes)
+2. **RL with binary reward converges in O(n^β) episodes** (I measured: β = 0.89)
 3. **Shaped rewards are dangerous** (RL-Step failed completely)
 
 The ~10x gap at N=100 matches the log(n) vs 1 bit/episode theory. This isn't a marginal improvement; it's a fundamental efficiency advantage for supervised learning.
