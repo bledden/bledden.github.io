@@ -54,13 +54,13 @@ If you know the answer directly, you learn in one shot. If you only know "too hi
 
 ![SL vs RL Scaling](/images/memorization/sl_vs_rl_scaling.png)
 
-The theoretical prediction was 1 episode. The extra episode is gradient descent overhead—you see the answer once, then need one update to internalize it.
+The theoretical prediction was 1 episode. The extra episode is gradient descent overhead: you see the answer once, then need one update to internalize it.
 
 ### RL-EoE Scaling
 
 RL with binary reward scaled as **n^0.89** (R² = 0.967).
 
-The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent suggests the model is slightly better than random search—it's learning some structure—but still fundamentally limited by the 1-bit-per-episode bottleneck.
+The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent suggests the model is slightly better than random search. It's learning some structure, but still fundamentally limited by the 1-bit-per-episode bottleneck.
 
 ![RL Scaling Fit](/images/memorization/rl_scaling_fit.png)
 
@@ -70,9 +70,9 @@ Distance-based rewards ("you're getting warmer") should help, right?
 
 **No.** RL-Step failed completely for N ≥ 100, hitting our 10,000-episode timeout without converging.
 
-**What the timeout means**: We can't determine the true episode count for RL-Step at N ≥ 100—it's at least 10,000, but could be arbitrarily higher. The N=10 result (7,004 episodes) suggests the scaling is worse than RL-EoE, but we can't fit a proper scaling law with only one valid data point.
+**What the timeout means**: We can't determine the true episode count for RL-Step at N ≥ 100. It's at least 10,000, but could be arbitrarily higher. The N=10 result (7,004 episodes) suggests the scaling is worse than RL-EoE, but we can't fit a proper scaling law with only one valid data point.
 
-**Why it failed**: Reward hacking. The model learned to exploit the distance metric (getting partial credit for being "close") without actually solving the task. Instead of learning the target, it learned to game the reward signal. This is a known failure mode of shaped rewards—they can create local optima that don't correspond to task completion.
+**Why it failed**: Reward hacking. The model learned to exploit the distance metric (getting partial credit for being "close") without actually solving the task. Instead of learning the target, it learned to game the reward signal. This is a known failure mode of shaped rewards, which can create local optima that don't correspond to task completion.
 
 ---
 
@@ -85,7 +85,7 @@ With 10 seeds per condition, all comparisons showed:
 | Supervised vs RL-EoE | **-8.2** | < 0.001 |
 | Supervised vs RL-Step | **-15.3** | < 0.001 |
 
-These are *massive* effect sizes. This isn't a subtle difference—it's a fundamental gap in learning efficiency.
+These are *massive* effect sizes. This isn't a subtle difference; it's a fundamental gap in learning efficiency.
 
 ![Effect Sizes](/images/memorization/effect_sizes.png)
 
@@ -121,7 +121,7 @@ We also tried testing this with LLMs and LoRA adapters. The hypothesis: if RL re
 |:----:|:----------:|:--:|
 | 1-32 | 0% | ~3% |
 
-**This wasn't theory failure—it was setup failure:**
+**This wasn't theory failure. It was setup failure:**
 
 | Issue | V1 Setting | Problem |
 |-------|------------|---------|
@@ -136,7 +136,7 @@ The MLP experiment worked because it was simple enough to isolate the learning d
 
 ## What This Means for Practice
 
-**If you can provide direct supervision, do it.** The efficiency gap is not small—it's 10-100x depending on problem size.
+**If you can provide direct supervision, do it.** The efficiency gap is not small; it's 10-100x depending on problem size.
 
 **RL makes sense when**:
 - You truly can't define the target (only whether it's good/bad)
@@ -156,7 +156,7 @@ Why is the gap so large?
 
 **Supervised learning**: Each example tells you exactly what the answer is. For N possible values, that's log₂(N) bits of information. With 6.6 bits (N=100), you've eliminated all uncertainty in one shot.
 
-**RL (binary reward)**: Each episode tells you "right" or "wrong"—1 bit. To narrow down among 100 possibilities, you need ~100 guesses on average (with some structure, ~n^0.89 in practice).
+**RL (binary reward)**: Each episode tells you "right" or "wrong," which is just 1 bit. To narrow down among 100 possibilities, you need ~100 guesses on average (with some structure, ~n^0.89 in practice).
 
 **The ratio**: log₂(100) / 1 = 6.6 bits vs 1 bit = 6.6x advantage per episode. Compound this over training, and supervised wins by orders of magnitude.
 
@@ -184,7 +184,7 @@ The LLM experiment needs V2 with fixed hyperparameters before drawing conclusion
 | MLP scaling (60 runs) | Local CPU | Free |
 | LLM LoRA sweep (120 runs) | Tinker | ~$30-50 |
 
-The MLP experiment was essentially free—a reminder that you can validate theory on simple problems before scaling to expensive LLM experiments.
+The MLP experiment was essentially free, a reminder that you can validate theory on simple problems before scaling to expensive LLM experiments.
 
 ---
 
@@ -223,7 +223,7 @@ The information-theoretic predictions from "LoRA without regret" are empirically
 2. **RL with binary reward converges in O(n^β) episodes** (we measured: β = 0.89)
 3. **Shaped rewards are dangerous** (RL-Step failed completely)
 
-The ~10x gap at N=100 matches the log(n) vs 1 bit/episode theory. This isn't a marginal improvement—it's a fundamental efficiency advantage for supervised learning.
+The ~10x gap at N=100 matches the log(n) vs 1 bit/episode theory. This isn't a marginal improvement; it's a fundamental efficiency advantage for supervised learning.
 
 When you have labels, use them.
 
