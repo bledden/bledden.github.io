@@ -447,40 +447,48 @@ def generate_memorization_visualizations():
     y_pos = np.arange(len(comparisons))
     bars = ax.barh(y_pos, hedges_g, color=colors, edgecolor='black', linewidth=1.2, height=0.5)
 
-    ax.set_xlabel("Hedges' g (Effect Size)", fontsize=12)
+    ax.set_xlabel("Hedges' g (Effect Size)", fontsize=12, fontweight='bold')
     ax.set_title('Statistical Significance: Massive Effect Sizes', fontsize=14, fontweight='bold')
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(comparisons, fontsize=11)
+    ax.set_yticklabels(comparisons, fontsize=11, fontweight='bold')
 
     # Add colored zones for effect size interpretation
-    ax.axvspan(0, 0.2, alpha=0.15, color='green', label='Small (< 0.2)')
-    ax.axvspan(0.2, 0.5, alpha=0.15, color='yellow', label='Medium (0.2-0.5)')
-    ax.axvspan(0.5, 0.8, alpha=0.15, color='orange', label='Large (0.5-0.8)')
-    ax.axvspan(0.8, 18, alpha=0.1, color='red', label='Very Large (> 0.8)')
+    ax.axvspan(0, 0.2, alpha=0.2, color='green', label='Small (< 0.2)')
+    ax.axvspan(0.2, 0.5, alpha=0.2, color='yellow', label='Medium (0.2-0.5)')
+    ax.axvspan(0.5, 0.8, alpha=0.2, color='orange', label='Large (0.5-0.8)')
+    ax.axvspan(0.8, 18, alpha=0.15, color='red', label='Very Large (> 0.8)')
 
-    # Add threshold lines with labels at top
-    for thresh, label in [(0.2, 'Small'), (0.5, 'Medium'), (0.8, 'Large')]:
-        ax.axvline(x=thresh, color='black', linestyle='--', alpha=0.4, linewidth=1)
-        ax.text(thresh, 1.7, label, ha='center', fontsize=9, color='gray', style='italic')
+    # Add threshold lines without overlapping labels - use legend instead
+    ax.axvline(x=0.8, color='#333333', linestyle='--', alpha=0.7, linewidth=1.5, label='"Large" threshold (0.8)')
 
     # Add value labels on bars
     for bar, g in zip(bars, hedges_g):
         ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height()/2,
-                f'g = {g:.1f}', ha='left', va='center', fontweight='bold', fontsize=11)
+                f'g = {g:.1f}', ha='left', va='center', fontweight='bold', fontsize=12, color='#222222')
 
     # Add annotation showing how massive these are
     ax.annotate('10-19x larger than\n"large" threshold (0.8)',
-                xy=(8.2, 0), xytext=(12, 0.8),
-                fontsize=10, ha='center',
-                arrowprops=dict(arrowstyle='->', color='#e74c3c', lw=1.5),
-                color='#e74c3c')
+                xy=(8.2, 0), xytext=(12, 0.7),
+                fontsize=11, ha='center', fontweight='bold',
+                arrowprops=dict(arrowstyle='->', color='#c0392b', lw=2),
+                color='#c0392b')
 
     ax.set_xlim(0, 18)
-    ax.set_ylim(-0.5, 2)
+    ax.set_ylim(-0.6, 1.8)
 
-    # Add a note about interpretation
-    ax.text(9, -0.4, 'Effect sizes > 0.8 are considered "large" in social sciences.\nThese results are 10-19x that threshold.',
-            fontsize=9, color='gray', style='italic', ha='center')
+    # Add a legend for the threshold zones
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='green', alpha=0.3, label='Small (< 0.2)'),
+        Patch(facecolor='yellow', alpha=0.3, label='Medium (0.2-0.5)'),
+        Patch(facecolor='orange', alpha=0.3, label='Large (0.5-0.8)'),
+        Patch(facecolor='red', alpha=0.2, label='Very Large (> 0.8)')
+    ]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=9, framealpha=0.95)
+
+    # Add a note about interpretation - darker text color for readability
+    ax.text(9, -0.45, 'Effect sizes > 0.8 are considered "large" in social sciences.\nThese results are 10-19x that threshold.',
+            fontsize=10, color='#333333', style='italic', ha='center', fontweight='medium')
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'effect_sizes.png'), dpi=150, bbox_inches='tight')

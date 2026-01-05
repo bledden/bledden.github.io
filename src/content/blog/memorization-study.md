@@ -68,9 +68,11 @@ The theoretical minimum is n^1.0 (linear in problem size). Our 0.89 exponent sug
 
 Distance-based rewards ("you're getting warmer") should help, right?
 
-**No.** RL-Step failed completely for N ≥ 100 (timeout at 10,000 episodes).
+**No.** RL-Step failed completely for N ≥ 100, hitting our 10,000-episode timeout without converging.
 
-Why? **Reward hacking.** The model learned to exploit the distance metric without actually solving the task. Shaped rewards are dangerous.
+**What the timeout means**: We can't determine the true episode count for RL-Step at N ≥ 100—it's at least 10,000, but could be arbitrarily higher. The N=10 result (7,004 episodes) suggests the scaling is worse than RL-EoE, but we can't fit a proper scaling law with only one valid data point.
+
+**Why it failed**: Reward hacking. The model learned to exploit the distance metric (getting partial credit for being "close") without actually solving the task. Instead of learning the target, it learned to game the reward signal. This is a known failure mode of shaped rewards—they can create local optima that don't correspond to task completion.
 
 ---
 
@@ -183,6 +185,33 @@ The LLM experiment needs V2 with fixed hyperparameters before drawing conclusion
 | LLM LoRA sweep (120 runs) | Tinker | ~$30-50 |
 
 The MLP experiment was essentially free—a reminder that you can validate theory on simple problems before scaling to expensive LLM experiments.
+
+---
+
+## Limitations and Future Work
+
+1. **LLM experiment failed**: The LoRA rank sweep didn't converge (2.5% success rate) due to hyperparameter issues
+2. **Single task type**: Only tested memorization; other tasks may show different dynamics
+3. **MLP only**: The clean results are on simple MLPs, not transformer architectures
+
+**Proposed next steps**:
+- **V2 LLM experiment**: Higher learning rate (1e-3), longer training (2000+ episodes), start with easier N=10
+- **Task diversity**: Test on classification, regression, and sequence prediction tasks
+- **Transformer validation**: Replicate MLP results on small transformers before scaling to LLMs
+- **Partial information RL**: Test RL variants that provide more than 1 bit (e.g., top-k feedback)
+
+---
+
+## Related Work
+
+The information-theoretic framework comes from ["LoRA without regret"](https://thinkingmachines.ai/blog/lora-without-regret), which derives the log(n) vs O(1) bits/episode prediction from first principles.
+
+This connects to broader work on sample complexity in learning:
+- [Sample Complexity of Reinforcement Learning](https://arxiv.org/abs/1706.06491) establishes theoretical lower bounds for RL
+- [On the Sample Complexity of Learning](https://dl.acm.org/doi/10.1145/174644.174647) (Blumer et al. 1989) provides foundational PAC learning results
+- The reward hacking we observed in RL-Step relates to [Specification Gaming](https://arxiv.org/abs/2109.13916) literature
+
+**Our contribution**: Empirically validating the specific log(n) vs 1 bit prediction with controlled experiments, and documenting shaped reward failure as a practical hazard.
 
 ---
 

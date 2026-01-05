@@ -75,7 +75,9 @@ Characters with "harder" personas (sarcasm, humor) showed the largest improvemen
 
 ## Prompt Distillation Actually Works
 
-This was the most surprising finding. After training on 50% prompt-free dialogues:
+Context distillation—training models to internalize prompt behavior—is an established technique ([Anthropic 2021](https://arxiv.org/abs/2112.00861), [Generative Context Distillation 2024](https://arxiv.org/abs/2411.15927)). What Open Character Training adds is embedding it within a constitutional pipeline specifically for persona training.
+
+After training on 50% prompt-free dialogues:
 
 - **84% of responses** maintained character without any system prompt
 - **Distillation consistency** improved from 0.50 to 0.76
@@ -182,6 +184,14 @@ Cross-model generalization remains partially validated. The Qwen partial results
 3. **The method generalizes** — Works across scientist, counselor, skeptic, and humorist personas
 4. **Trade-offs are minimal** — Small reasoning decreases are acceptable
 5. **Nuanced personas benefit most** — Sarcasm and humor showed the largest gains
+
+---
+
+## Related Work
+
+Context distillation for internalizing prompt behavior is well-established. [Anthropic (2021)](https://arxiv.org/abs/2112.00861) introduced the foundational technique. [Generative Context Distillation (2024)](https://arxiv.org/abs/2411.15927) showed it enables "high-performance inference without explicit prompts." [Persona Vector Distillation](https://martianlantern.github.io/2025/12/persona-vector-distillation/) achieved 89% of target persona traits through LoRA distillation.
+
+What distinguishes Open Character Training is the **constitutional framing**: combining introspective SFT, 50/50 prompt distillation, and DPO preference learning into a unified pipeline for character training. Our contribution is validating this specific approach works across diverse persona types (scientists, counselors, skeptics, humorists) and improves adversarial robustness—not just alignment.
 
 ---
 
