@@ -1,13 +1,13 @@
 ---
 title: 'Constitutional AI from Base Models: Can You Train Safety Without Instruction Tuning?'
-description: 'We replicated Constitutional AI starting from a raw base model. The pipeline works, but DPO needs more than 42 training pairs to show improvement over SFT alone.'
+description: 'I replicated Constitutional AI starting from a raw base model. The pipeline works, but DPO needs more than 42 training pairs to show improvement over SFT alone.'
 pubDate: 2026-01-01T06:00:00
 heroImage: '../../assets/cai-hero.png'
 ---
 
 [Constitutional AI](https://arxiv.org/abs/2212.08073) (CAI) is Anthropic's approach to training helpful, harmless AI systems using a set of principles—a "constitution"—rather than pure human preference data. But most implementations start from instruction-tuned models, which may introduce biases from that initial training.
 
-**The question**: Can we train CAI starting from a raw base model, with no instruction-tuning contamination?
+**The question**: Can you train CAI starting from a raw base model, with no instruction-tuning contamination?
 
 After 10 days of experimentation and ~300 training runs, the answer is **yes, the pipeline works**—but with an important caveat about data scale.
 
@@ -15,7 +15,7 @@ After 10 days of experimentation and ~300 training runs, the answer is **yes, th
 
 ## The Experiment
 
-We implemented a three-phase CAI pipeline:
+I implemented a three-phase CAI pipeline:
 
 1. **SFT Phase** (500 steps): Train on 6 human-written helpful responses to establish basic instruction-following
 2. **Constitutional Data Generation**: Generate responses, critique them against 18 principles, revise 4 times each
@@ -46,17 +46,17 @@ Exactly. And understanding *why* is the most interesting finding.
 
 ## The 42-Pair Problem
 
-Our DPO training used only **42 preference pairs**. The original Anthropic CAI paper used ~161,000.
+The DPO training used only **42 preference pairs**. The original Anthropic CAI paper used ~161,000.
 
-This wasn't an oversight—it was budget-driven iteration. While debugging ceiling effects, chat template issues, and checkpoint export problems, we needed fast iteration cycles. The 42 pairs were appropriate for pipeline validation but insufficient for DPO to learn meaningful preference distinctions.
+This wasn't an oversight—it was budget-driven iteration. While debugging ceiling effects, chat template issues, and checkpoint export problems, I needed fast iteration cycles. The 42 pairs were appropriate for pipeline validation but insufficient for DPO to learn meaningful preference distinctions.
 
-**Earlier runs told a different story**: Before we fixed all the bugs, a December 25 run (8 seeds) showed 50.3% ASR improvement. The high variance across seeds (4% to 71% improvement) was itself a warning sign that noise dominated signal.
+**Earlier runs told a different story**: Before I fixed all the bugs, a December 25 run (8 seeds) showed 50.3% ASR improvement. The high variance across seeds (4% to 71% improvement) was itself a warning sign that noise dominated signal.
 
-**The takeaway**: At small data scale, SFT does all the heavy lifting. DPO needs volume. This aligns with [Mirzadeh et al.'s finding](https://ojs.aaai.org/index.php/AAAI/article/view/5963) that knowledge transfer degrades when there's a large capacity gap—in our case, the "gap" is between our 42 pairs and the signal needed for generalization.
+**The takeaway**: At small data scale, SFT does all the heavy lifting. DPO needs volume. This aligns with [Mirzadeh et al.'s finding](https://ojs.aaai.org/index.php/AAAI/article/view/5963) that knowledge transfer degrades when there's a large capacity gap—in this case, the "gap" is between the 42 pairs and the signal needed for generalization.
 
 ---
 
-## Training Dynamics (What We Learned from W&B)
+## Training Dynamics (What I Learned from W&B)
 
 Looking at the training curves across 10 seeds:
 
@@ -88,11 +88,11 @@ This finding is likely robust regardless of data scale, since it's about output 
 
 ---
 
-## The Bugs We Fixed
+## The Bugs I Fixed
 
-Half our compute budget went to debugging. Here's what broke:
+Half the compute budget went to debugging. Here's what broke:
 
-**1. Ceiling Effect**: Initial red-team prompts were too direct. Modern base models refuse "How do I make a bomb?" without any training. We added 24 jailbreak-style prompts (role-play, hypothetical framing, instruction injection).
+**1. Ceiling Effect**: Initial red-team prompts were too direct. Modern base models refuse "How do I make a bomb?" without any training. I added 24 jailbreak-style prompts (role-play, hypothetical framing, instruction injection).
 
 **2. Garbage Evaluation**: The judge model outputted `<|eot_id|>` tokens instead of structured evaluations.
 
@@ -107,7 +107,7 @@ prompt_tokens = self.tokenizer.apply_chat_template(
 )
 ```
 
-**3. Missing Checkpoints**: Tinker's remote weights are ephemeral. We added checkpoint export to compare trained models against baselines.
+**3. Missing Checkpoints**: Tinker's remote weights are ephemeral. I added checkpoint export to compare trained models against baselines.
 
 ---
 
@@ -126,9 +126,9 @@ prompt_tokens = self.tokenizer.apply_chat_template(
 
 ## Related Work
 
-Most CAI implementations start from instruction-tuned models. [Huang et al. (2024)](https://arxiv.org/abs/2504.04918) tested Constitutional AI with Llama 3-8B and observed "clear signs of model collapse" in smaller models during self-improvement—suggesting our choice of Llama-3.2-3B may have been near the minimum viable size.
+Most CAI implementations start from instruction-tuned models. [Huang et al. (2024)](https://arxiv.org/abs/2504.04918) tested Constitutional AI with Llama 3-8B and observed "clear signs of model collapse" in smaller models during self-improvement—suggesting my choice of Llama-3.2-3B may have been near the minimum viable size.
 
-The [HuggingFace CAI tutorial](https://huggingface.co/blog/constitutional_ai) uses DPO instead of PPO (as we did), but trains on substantially more data. Our 42-pair experiment confirms their implicit assumption: DPO needs volume to work.
+The [HuggingFace CAI tutorial](https://huggingface.co/blog/constitutional_ai) uses DPO instead of PPO (as I did), but trains on substantially more data. The 42-pair experiment confirms their implicit assumption: DPO needs volume to work.
 
 ---
 
@@ -137,9 +137,9 @@ The [HuggingFace CAI tutorial](https://huggingface.co/blog/constitutional_ai) us
 1. **CAI from base models works mechanically** — no instruction-tuned contamination required
 2. **SFT does the heavy lifting at small scale** — DPO needs volume to show improvement
 3. **Style flexibility hypothesis was wrong** — CAI reduces flexibility, not increases it
-4. **Budget for debugging** — half our compute went to fixing bugs before we could measure anything
+4. **Budget for debugging** — half the compute went to fixing bugs before I could measure anything
 
-The open question: At what data scale does DPO become beneficial for CAI? Our 42 pairs showed nothing; 161K clearly works. The inflection point is somewhere in between.
+The open question: At what data scale does DPO become beneficial for CAI? The 42 pairs showed nothing; 161K clearly works. The inflection point is somewhere in between.
 
 ---
 

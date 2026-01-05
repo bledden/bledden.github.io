@@ -1,13 +1,13 @@
 ---
 title: 'Teaching AI to Embody Characters: A Replication of Open Character Training'
-description: 'We trained 5 distinct AI personas using constitutional methods. Character alignment improved 39%, prompt distillation worked, and adversarial resistance increased. The method generalizes across personality types.'
+description: 'I trained 5 distinct AI personas using constitutional methods. Character alignment improved 39%, prompt distillation worked, and adversarial resistance increased. The method generalizes across personality types.'
 pubDate: 2026-01-01T12:00:00
 heroImage: '../../assets/character-hero.png'
 ---
 
 Can you train an AI to consistently embody a specific character—not just respond in a style, but truly internalize a persona so it persists even without system prompts?
 
-We replicated the [Open Character Training](https://arxiv.org/abs/2511.01689) methodology with 47 training runs across 5 distinct personas. **The answer is yes, and the improvements are substantial.**
+I replicated the [Open Character Training](https://arxiv.org/abs/2511.01689) methodology with 47 training runs across 5 distinct personas. **The answer is yes, and the improvements are substantial.**
 
 ---
 
@@ -39,9 +39,9 @@ The method works across all character types—scientists, counselors, skeptics, 
 
 ---
 
-## The Characters We Trained
+## The Characters I Trained
 
-We trained 5 distinct personas with unique "soul documents" defining their identity:
+I trained 5 distinct personas with unique "soul documents" defining their identity:
 
 | Character | Persona | Key Traits | Seeds |
 |-----------|---------|------------|:-----:|
@@ -91,7 +91,7 @@ This means you can deploy these models without expensive system prompts at infer
 
 ## Adversarial Robustness
 
-We tested character resistance using jailbreak-style prompts:
+I tested character resistance using jailbreak-style prompts:
 
 | Metric | Base | Trained | Change |
 |--------|:----:|:-------:|:------:|
@@ -125,7 +125,7 @@ The three-phase pipeline shows clear learning progression:
 
 ## The Trade-offs
 
-Constitutional training isn't free. We observed small decreases in:
+Constitutional training isn't free. I observed small decreases in:
 
 | Metric | Change | Interpretation |
 |--------|:------:|----------------|
@@ -138,7 +138,7 @@ These trade-offs are acceptable given the magnitude of alignment gains. The mode
 
 ## Multi-Model Testing (Partial)
 
-We attempted to test across 6 model families. Platform limitations restricted our validation:
+I attempted to test across 6 model families. Platform limitations restricted validation:
 
 | Model | Status | Notes |
 |-------|--------|-------|
@@ -165,9 +165,9 @@ Cross-model generalization remains partially validated. The Qwen partial results
 
 ---
 
-## What We Confirmed from the Paper
+## What I Confirmed from the Paper
 
-| Claim | Our Finding | Status |
+| Claim | Finding | Status |
 |-------|-------------|:------:|
 | DPO improves character adherence | +0.22 alignment | Confirmed |
 | Prompt distillation works | 84% success without prompts | Confirmed |
@@ -191,7 +191,7 @@ Cross-model generalization remains partially validated. The Qwen partial results
 
 Context distillation for internalizing prompt behavior is well-established. [Anthropic (2021)](https://arxiv.org/abs/2112.00861) introduced the foundational technique. [Generative Context Distillation (2024)](https://arxiv.org/abs/2411.15927) showed it enables "high-performance inference without explicit prompts." [Persona Vector Distillation](https://martianlantern.github.io/2025/12/persona-vector-distillation/) achieved 89% of target persona traits through LoRA distillation.
 
-What distinguishes Open Character Training is the **constitutional framing**: combining introspective SFT, 50/50 prompt distillation, and DPO preference learning into a unified pipeline for character training. Our contribution is validating this specific approach works across diverse persona types (scientists, counselors, skeptics, humorists) and improves adversarial robustness—not just alignment.
+What distinguishes Open Character Training is the **constitutional framing**: combining introspective SFT, 50/50 prompt distillation, and DPO preference learning into a unified pipeline for character training. My contribution is validating this specific approach works across diverse persona types (scientists, counselors, skeptics, humorists) and improves adversarial robustness—not just alignment.
 
 ---
 

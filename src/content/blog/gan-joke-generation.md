@@ -1,11 +1,11 @@
 ---
 title: 'GAN-Style Training for Jokes: When Metrics Lie'
-description: 'We trained a GAN to generate jokes. The metrics looked great. The jokes were terrible. A cautionary tale about evaluation gaps in creative generation.'
+description: 'I trained a GAN to generate jokes. The metrics looked great. The jokes were terrible. A cautionary tale about evaluation gaps in creative generation.'
 pubDate: 2026-01-01T05:00:00
 heroImage: '../../assets/gan-hero.png'
 ---
 
-What if you could train a language model to generate jokes using adversarial training—like GANs for images, but for humor? We tried it. The experiment *mechanically* worked, but the output quality revealed a fundamental problem with how we evaluate creative text generation.
+What if you could train a language model to generate jokes using adversarial training—like GANs for images, but for humor? I tried it. The experiment *mechanically* worked, but the output quality revealed a fundamental problem with how I evaluate creative text generation.
 
 **The honest assessment**: Metrics said 48% fooling rate, 100% unique jokes, 100% topic coverage. Manual inspection found this:
 
@@ -23,7 +23,7 @@ The LLM judge scored this **7.9/10**.
 
 ## The Approach
 
-We implemented GAN-style self-play training:
+I implemented GAN-style self-play training:
 
 1. **Generator** (Llama-3.2-3B + LoRA): Generates jokes conditioned on topic + style
 2. **Discriminator** (Llama-3.2-3B + LoRA): Classifies real vs generated jokes
@@ -39,7 +39,7 @@ Generator updated via REINFORCE with reward = P(real)
 
 ---
 
-## What We Learned: Two Versions
+## What I Learned: Two Versions
 
 ### V1: Mode Collapse Hell
 
@@ -57,7 +57,7 @@ The discriminator learned too fast, and the generator collapsed to "safe" repeti
 
 ### V2: Fixed Training, Broken Output
 
-We fixed the training dynamics:
+I fixed the training dynamics:
 
 | Change | V1 | V2 | Result |
 |--------|----|----|--------|
@@ -85,7 +85,7 @@ The diversity metrics were **completely misleading**.
 
 **Why did 100% unique ratio miss repetition loops?**
 
-Our deduplication checked for exact string matches between jokes. It caught "Why did the chicken..." appearing 10 times. It did NOT catch one joke containing "I'm not going to tell you about lobster" repeated 15 times internally.
+The deduplication checked for exact string matches between jokes. It caught "Why did the chicken..." appearing 10 times. It did NOT catch one joke containing "I'm not going to tell you about lobster" repeated 15 times internally.
 
 **Why did the LLM judge give 7.9/10 to broken output?**
 
@@ -93,13 +93,13 @@ The judge evaluated coherence, setup-punchline structure, and topic relevance. T
 
 **Why was originality only 2.8/10?**
 
-This is the only metric that captured reality. LLM judges can detect clichéd joke structures even when fooled by repetition. But we dismissed this as "model capacity issue" instead of recognizing the deeper problem.
+This is the only metric that captured reality. LLM judges can detect clichéd joke structures even when fooled by repetition. But I dismissed this as "model capacity issue" instead of recognizing the deeper problem.
 
 ---
 
 ## The Training Curves Tell the Story
 
-From our W&B tracking across 10 seeds:
+From W&B tracking across 10 seeds:
 
 - **Generator fooling rate**: Varied wildly (3.5% to 100% by seed)
 - **Discriminator accuracy**: Settled to 50-68% (well-calibrated)
@@ -113,7 +113,7 @@ The *training dynamics* were healthy. The *output quality* was not. These are di
 
 ## What Actually Worked
 
-Despite the output quality issues, we solved real technical problems:
+Despite the output quality issues, I solved real technical problems:
 
 1. **Deduplication is essential**: Without it, generators collapse to safe patterns
 2. **Dynamic discriminator scheduling**: Prevents training instability
@@ -129,7 +129,7 @@ These would transfer to any GAN-style text generation task.
 
 The low originality (2.8/10) might be a **model size problem**, not a training dynamics problem. Llama-3.2-3B may lack the creative capacity for original humor.
 
-**Evidence**: The same model struggles with structured output in other tasks (see "3B cliff" in our cross-project analysis). Creative generation may require similar minimum capacity. This aligns with research on the ["small model learnability gap"](https://arxiv.org/abs/2502.12143)—models ≤3B parameters don't consistently benefit from complex reasoning or distillation.
+**Evidence**: The same model struggles with structured output in other tasks (see "3B cliff" in the cross-project analysis). Creative generation may require similar minimum capacity. This aligns with research on the ["small model learnability gap"](https://arxiv.org/abs/2502.12143)—models ≤3B parameters don't consistently benefit from complex reasoning or distillation.
 
 **V3 Proposal**: Test with Llama-3.1-8B-Instruct before concluding adversarial training can't achieve high originality.
 
@@ -137,13 +137,13 @@ The low originality (2.8/10) might be a **model size problem**, not a training d
 
 ## Related Work
 
-Our findings align with existing research on LLM humor generation:
+These findings align with existing research on LLM humor generation:
 
 - [Jentzsch & Kersting (2023)](https://arxiv.org/abs/2403.00794) found that "LLMs struggle to generate humor" but can effectively edit humor away—suggesting generation requires capabilities beyond pattern matching.
 - The [CleanComedy paper](https://arxiv.org/abs/2412.09203) trained Llama-3.1-8B for humor but noted that "generative humor generally remains an open research problem."
 - Research on [structured thought for humor](https://arxiv.org/abs/2410.10370) proposes that a reward model is necessary since "there is currently no expert model of humor."
 
-Our contribution is documenting the specific failure mode where automated metrics (fooling rate, uniqueness) pass while output quality fails—a cautionary tale for anyone evaluating creative generation.
+My contribution is documenting the specific failure mode where automated metrics (fooling rate, uniqueness) pass while output quality fails—a cautionary tale for anyone evaluating creative generation.
 
 ---
 
@@ -151,7 +151,7 @@ Our contribution is documenting the specific failure mode where automated metric
 
 1. **Metrics lie about creative quality** — Diversity metrics catch duplicates, not degenerate text
 2. **LLM judges have blind spots** — They can miss obvious failure modes
-3. **Manual inspection is non-negotiable** — We only caught the problem by reading outputs
+3. **Manual inspection is non-negotiable** — I only caught the problem by reading outputs
 4. **Training stability ≠ output quality** — These are independent problems
 5. **Model capacity matters for creativity** — 3B might be below minimum viable
 
@@ -165,13 +165,13 @@ Our contribution is documenting the specific failure mode where automated metric
 | 10-seed experiment | ~$40-50 |
 | Full project (V1+V2) | ~$100 |
 
-We spent ~$100 to learn that our evaluation pipeline was broken. Money well spent—if we'd scaled up before discovering this, we'd have wasted much more.
+I spent ~$100 to learn that the evaluation pipeline was broken. Money well spent—if I'd scaled up before discovering this, I'd have wasted much more.
 
 ---
 
 ## The Uncomfortable Conclusion
 
-GAN-style training for creative text *can work* mechanically. Our V2 training dynamics are solid. But we don't have good ways to automatically evaluate creative output quality.
+GAN-style training for creative text *can work* mechanically. The V2 training dynamics are solid. But there aren't good ways to automatically evaluate creative output quality.
 
 This is a general problem. If you're building creative generation systems, invest heavily in evaluation before scaling up training.
 

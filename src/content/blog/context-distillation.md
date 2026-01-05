@@ -1,11 +1,11 @@
 ---
 title: 'The Distribution Cliff: Why Hybrid Distillation Fails on Decoder-Only LLMs'
-description: 'We tested 8 distillation methods across 160 runs. Any off-policy component causes collapse. Pure on-policy with teacher seeding achieves 71% GSM8K accuracy.'
+description: 'I tested 8 distillation methods across 160 runs. Any off-policy component causes collapse. Pure on-policy with teacher seeding achieves 71% GSM8K accuracy.'
 pubDate: 2026-01-02
 heroImage: '../../assets/context-distillation-hero.png'
 ---
 
-The GKD paper recommends hybrid distillation: bootstrap with off-policy, then refine with on-policy. We tested this across 160 training runs with two model families.
+The GKD paper recommends hybrid distillation: bootstrap with off-policy, then refine with on-policy. I tested this across 160 training runs with two model families.
 
 **It catastrophically fails.** Every method with any off-policy component collapses to 0% accuracy.
 
@@ -24,7 +24,7 @@ The spec proposed comparing three approaches for **context distillation** (same 
 
 This builds on foundational work by [Anthropic (2021)](https://arxiv.org/abs/2112.00861) and [Snell et al. (2022)](https://arxiv.org/abs/2209.15189), with on-policy methods from [Agarwal et al. (2023)](https://arxiv.org/abs/2306.13649).
 
-**What we discovered**: The answer depends critically on whether there's a capability gap between teacher and student—and this changes everything.
+**What I discovered**: The answer depends critically on whether there's a capability gap between teacher and student—and this changes everything.
 
 ---
 
@@ -71,7 +71,7 @@ When the student is much smaller than the teacher:
 
 ## The 160-Run Experiment
 
-We tested 8 distillation methods across two model families:
+I tested 8 distillation methods across two model families:
 
 | Family | Student | Teacher | Size Ratio |
 |--------|---------|---------|:----------:|
@@ -146,11 +146,11 @@ The curves make the failure mode visually obvious: stable training → phase tra
 
 ---
 
-## What We Tried (And What Failed)
+## What I Tried (And What Failed)
 
 ### KL Regularization
 
-We added a KL penalty to prevent drift from initial weights:
+I added a KL penalty to prevent drift from initial weights:
 
 ```python
 total_loss = off_policy_loss + beta * D_KL(current || initial)
@@ -160,7 +160,7 @@ total_loss = off_policy_loss + beta * D_KL(current || initial)
 
 ### Mixing Objectives (Deterministic Weighting)
 
-We tested deterministic weighted loss mixing each step:
+I tested deterministic weighted loss mixing each step:
 
 ```python
 loss = 0.3 * off_policy_loss + 0.7 * gkd_loss
@@ -168,17 +168,17 @@ loss = 0.3 * off_policy_loss + 0.7 * gkd_loss
 
 **Result**: Still collapsed. Even 30% off-policy signal is enough to corrupt generation over 100 steps.
 
-**Note**: This differs from GKD's Algorithm 1 λ-mix, which uses *stochastic per-batch selection* (sample student-generated data with probability λ, teacher dataset with probability 1-λ). Our approach applies both losses simultaneously with fixed weights. The stochastic formulation might behave differently, but we didn't test it—our "mixture" is a simpler deterministic variant.
+**Note**: This differs from GKD's Algorithm 1 λ-mix, which uses *stochastic per-batch selection* (sample student-generated data with probability λ, teacher dataset with probability 1-λ). My approach applies both losses simultaneously with fixed weights. The stochastic formulation might behave differently, but I didn't test it—this "mixture" is a simpler deterministic variant.
 
 ### Experience Replay
 
-We injected old teacher trajectories during on-policy training.
+I injected old teacher trajectories during on-policy training.
 
 **Result**: Partial (2.8-7.4% accuracy). Better than pure hybrid, but still fundamentally broken.
 
 ### Reverse Curriculum
 
-What if we do on-policy first, then off-policy refinement?
+What if you do on-policy first, then off-policy refinement?
 
 **Result**: Collapsed. The order doesn't matter—any off-policy exposure corrupts the student.
 
@@ -206,11 +206,11 @@ Step 50:  [Teacher: 0 tokens]  [Student: all]
 
 ## The Pivot: Context Distillation → Size Distillation
 
-We started with the original spec's setup: **context distillation** using the same model with/without few-shot examples (following [Snell et al. 2022](https://arxiv.org/abs/2209.15189)).
+I started with the original spec's setup: **context distillation** using the same model with/without few-shot examples (following [Snell et al. 2022](https://arxiv.org/abs/2209.15189)).
 
 ### Phase 1: Same-Model Context Distillation (Failed)
 
-We ran 10-seed experiments with Qwen3-4B as both teacher (with 10-shot context) and student (no context):
+I ran 10-seed experiments with Qwen3-4B as both teacher (with 10-shot context) and student (no context):
 
 | Mode | Eval Score | Downstream Accuracy |
 |------|:----------:|:-------------------:|
@@ -223,11 +223,11 @@ Off-policy achieved 0.97 eval score but 0% downstream accuracy. The student lear
 
 **Why**: When student and teacher are the same model, there's no capability gap. The few-shot context helps the teacher format answers correctly, but the student already has the same underlying reasoning ability. Distillation produces format matching, not capability transfer.
 
-**Key insight**: Our eval metric (Jaccard + bigram similarity) was measuring format matching, not actual capability. This is why off-policy achieved 0.97 eval but 0% accuracy—the student matched the teacher's response style perfectly without learning to reason.
+**Key insight**: The eval metric (Jaccard + bigram similarity) was measuring format matching, not actual capability. This is why off-policy achieved 0.97 eval but 0% accuracy—the student matched the teacher's response style perfectly without learning to reason.
 
 ### Phase 2: Pivot to Size Distillation
 
-To actually transfer capabilities, we switched to using larger teachers:
+To actually transfer capabilities, I switched to using larger teachers:
 
 | Setup | Result |
 |-------|--------|
@@ -285,23 +285,23 @@ The [project spec](https://github.com/thinking-machines-lab/tinker-project-ideas
 - Context distillation is useful for style/format, not reasoning ability
 
 **For size distillation (small ← large model)**:
-- On-policy significantly outperformed off-policy in our experiments
-- Hybrid mode collapsed in all configurations we tested
+- On-policy significantly outperformed off-policy in these experiments
+- Hybrid mode collapsed in all configurations I tested
 - Teacher seeding achieved the best results (58-71% GSM8K accuracy)
 
 **The deeper insight**: The GKD paper's hybrid recommendation assumes the student can generate coherent outputs after off-policy training. With large capability gaps, this assumption may not hold—the student learns to mimic tokens without understanding them, producing garbage when forced to generate independently.
 
-**Caveats**: Our experiments used specific hyperparameters, model families, and a single benchmark (GSM8K). The collapse pattern was consistent across our tests, but different configurations (learning rates, longer warmup, different model architectures) might yield different results. Teacher seeding appears promising, but more investigation is warranted before drawing universal conclusions.
+**Caveats**: These experiments used specific hyperparameters, model families, and a single benchmark (GSM8K). The collapse pattern was consistent across these tests, but different configurations (learning rates, longer warmup, different model architectures) might yield different results. Teacher seeding appears promising, but more investigation is warranted before drawing universal conclusions.
 
 ---
 
 ## Related Work
 
-**Important context on the GKD paper**: [Agarwal et al. (2024)](https://arxiv.org/abs/2306.13649) tested GKD exclusively on **encoder-decoder models** (T5-small/base/large ← T5-XL, up to 38x size ratio). They did not evaluate decoder-only architectures like Llama or Qwen. Encoder-decoder models have fundamentally different generation dynamics—the encoder provides conditioning that may stabilize generation even after distribution drift. Our experiments extend GKD to decoder-only LLMs, where hybrid mode appears to fail catastrophically. This is not a contradiction of their results, but a finding that their hybrid recommendation may not generalize to modern decoder-only architectures.
+**Important context on the GKD paper**: [Agarwal et al. (2024)](https://arxiv.org/abs/2306.13649) tested GKD exclusively on **encoder-decoder models** (T5-small/base/large ← T5-XL, up to 38x size ratio). They did not evaluate decoder-only architectures like Llama or Qwen. Encoder-decoder models have fundamentally different generation dynamics—the encoder provides conditioning that may stabilize generation even after distribution drift. These experiments extend GKD to decoder-only LLMs, where hybrid mode appears to fail catastrophically. This is not a contradiction of their results, but a finding that their hybrid recommendation may not generalize to modern decoder-only architectures.
 
 The capability gap problem in distillation is well-documented. [Mirzadeh et al. (2020)](https://ojs.aaai.org/index.php/AAAI/article/view/5963) showed that "student network performance degrades when the gap between student and teacher is large," proposing Teacher Assistant models as intermediaries. [Speculative Knowledge Distillation](https://arxiv.org/abs/2410.11325) addresses this by dynamically adjusting on-policy vs off-policy balance based on the distribution gap.
 
-Our contribution is documenting the specific failure mode at the phase transition in decoder-only LLMs—the instantaneous collapse when switching from off-policy to on-policy, with KL divergence spiking 361x in a single step. This appears to be a distinct phenomenon from gradual capability gap degradation, and may be specific to decoder-only architectures.
+My contribution is documenting the specific failure mode at the phase transition in decoder-only LLMs—the instantaneous collapse when switching from off-policy to on-policy, with KL divergence spiking 361x in a single step. This appears to be a distinct phenomenon from gradual capability gap degradation, and may be specific to decoder-only architectures.
 
 ---
 
