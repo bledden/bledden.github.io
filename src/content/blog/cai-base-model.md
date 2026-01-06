@@ -115,7 +115,7 @@ prompt_tokens = self.tokenizer.apply_chat_template(
 
 | Data Size | Estimated Cost | Notes |
 |-----------|---------------|-------|
-| 42 pairs (ours) | ~$24 | Insufficient |
+| 42 pairs | ~$24 | Insufficient |
 | 1K pairs | $50-60 | Minimum viable |
 | 10K pairs | $500-600 | Reasonable replication |
 | 161K pairs (original) | $8,000+ | Full-scale |

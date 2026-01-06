@@ -234,7 +234,7 @@ To actually transfer capabilities, I switched to using larger teachers:
 | Qwen-4B ← Qwen-30B | 58.6% GSM8K accuracy |
 | Llama-8B ← Llama-70B | 71.0% GSM8K accuracy |
 
-This worked—but introduced the distribution cliff problem that became our main finding.
+This worked—but introduced the distribution cliff problem that became the main finding.
 
 ### Implications for the Original Spec
 
