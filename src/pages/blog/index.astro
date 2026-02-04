@@ -9,12 +9,13 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 // Explicit ordering by quality ranking
 const postOrder = [
-	'context-distillation',      // 1st - novel distribution cliff finding
-	'open-character-training',   // 2nd - strong replication
-	'memorization-study',        // 3rd - clean theory validation
-	'cai-base-model',            // 4th - pipeline works, data scale issue
-	'gan-joke-generation',       // 5th - honest failure analysis
-	'cross-project-meta-analysis', // 6th - synthesis piece
+	'noisy-student',             // 1st - 4 experiments, consensus self-training finding
+	'context-distillation',      // 2nd - novel distribution cliff finding
+	'open-character-training',   // 3rd - strong replication
+	'memorization-study',        // 4th - clean theory validation
+	'cai-base-model',            // 5th - pipeline works, data scale issue
+	'gan-joke-generation',       // 6th - honest failure analysis
+	'cross-project-meta-analysis', // 7th - synthesis piece
 ];
 
 const allPosts = await getCollection('blog');
