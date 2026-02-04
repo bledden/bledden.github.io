@@ -165,7 +165,7 @@ heroImage: '../../assets/noisy-student-hero.png'
   .table-wrap {
     overflow-x: auto;
     margin: 24px 0;
-    -webkit-overflow-scrolling: touch;
+   -webkit-overflow-scrolling: touch;
   }
   .table-wrap table {
     width: 100%;
@@ -210,7 +210,7 @@ heroImage: '../../assets/noisy-student-hero.png'
 
 <div class="abstract">
   <div class="abstract-label">TL;DR</div>
-  I spent four weeks trying to make noisy student self-distillation work for LLMs on the <a href="https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/noisy-student.md">Thinking Machines Lab</a> Tinker platform. The first attempt &mdash; directly porting token-level noise from computer vision &mdash; failed spectacularly (p=0.0018). A complete redesign replacing noise with consensus-based pseudo-labeling and RLVR produced a real result: +3.9pp on GSM8K math reasoning (p=0.002, N=7 seeds). Along the way I discovered a bootstrap capability threshold that governs when self-training can work at all, ran out of billing before completing the most interesting experiment, and fought API timeouts at every turn. This is the story of how each failure shaped the next attempt.
+  I spent four weeks trying to make noisy student self-distillation work for LLMs on the <a href="https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/noisy-student.md">Thinking Machines Lab</a> Tinker platform. The first attempt - directly porting token-level noise from computer vision - failed (p=0.0018). A redesign replacing noise with consensus-based pseudo-labeling and RLVR produced a real result: +3.9pp on GSM8K math reasoning (p=0.002, N=7 seeds). Along the way I found a bootstrap capability threshold that governs when self-training can work at all, ran out of billing before completing the most interesting experiment, and fought API timeouts at every turn. This is how each failure shaped the next attempt.
 </div>
 
 ---
@@ -219,26 +219,26 @@ heroImage: '../../assets/noisy-student-hero.png'
 
 ## A Proposal and a Simple Idea
 
-The premise seemed straightforward. **Noisy student self-distillation** ([Xie et al., 2020](https://arxiv.org/abs/1911.04252)) had achieved state-of-the-art results on ImageNet by iteratively training student models on teacher-generated pseudo-labels with noise augmentation. The key mechanism: noise (RandAugment, dropout, stochastic depth) regularized the student, preventing overfitting to potentially incorrect pseudo-labels. It seemed natural to try the same thing with LLMs.
+**Noisy student self-distillation** ([Xie et al., 2020](https://arxiv.org/abs/1911.04252)) got state-of-the-art on ImageNet by iteratively training student models on teacher-generated pseudo-labels with noise augmentation. The key mechanism: noise (RandAugment, dropout, stochastic depth) regularized the student, preventing overfitting to potentially incorrect pseudo-labels. The obvious next step was to try this with LLMs.
 
-The Thinking Machines Lab [proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/noisy-student.md) asked a specific question: could this technique bootstrap limited labeled data into effective utilization of larger unlabeled datasets, using **reinforcement learning with verifiable rewards (RLVR)**? Unlike image classification, many language tasks offer automatic verification &mdash; code can be executed against test cases, math answers can be checked. This meant pseudo-labels could be *verified*, not just guessed.
+The Thinking Machines Lab [proposal](https://github.com/thinking-machines-lab/tinker-project-ideas/blob/main/noisy-student.md) asked a specific question: could this technique bootstrap limited labeled data into effective utilization of larger unlabeled datasets, using **reinforcement learning with verifiable rewards (RLVR)**? Unlike image classification, many language tasks offer automatic verification - code can be executed against test cases, math answers can be checked. This meant pseudo-labels could be *verified*, not just guessed.
 
 I set up on the Tinker API with **Qwen/Qwen3-30B-A3B-Instruct-2507** (30B parameters, 3B active via MoE), fine-tuned with LoRA rank 32. The plan was to start with the simplest possible transfer of the noisy student recipe to language and iterate from there.
 
-What I didn't anticipate was that "iterate from there" would mean four complete experimental redesigns, a severe overfitting crisis, an 8% baseline that needed forensic investigation, and billing exhaustion right when the most interesting results were starting to appear.
+I didn't anticipate that "iterate from there" would mean four redesigns, a severe overfitting crisis, an 8% baseline that needed forensic investigation, and billing exhaustion right when the most interesting results were starting to show up.
 
 ---
 
-<div class="section-num">Week 1 &mdash; December 2025</div>
+<div class="section-num">Week 1 - December 2025</div>
 
 ## V1: Porting Token Noise from Vision (It Didn't Work)
 
-The first attempt was the most direct translation possible: take the noisy student recipe, replace pixel augmentation with token-level dropout, and see what happens. I used a 30B teacher to pseudo-label 50 code generation prompts, then trained a 4B student on those labels with and without noise. The noise configuration was 10% activation dropout plus 10% input token dropout &mdash; randomly removing tokens from the training prompt before tokenization.
+The first attempt was the most direct translation possible: take the noisy student recipe, replace pixel augmentation with token-level dropout, and see what happens. I used a 30B teacher to pseudo-label 50 code generation prompts, then trained a 4B student on those labels with and without noise. The noise configuration was 10% activation dropout plus 10% input token dropout - randomly removing tokens from the training prompt before tokenization.
 
-I ran 10 seeds per condition for statistical rigor. The results came back fast, and they were unambiguous.
+I ran 10 seeds per condition. The results came back fast and were clear-cut.
 
 <div class="chart-container">
-  <div class="chart-title">Figure 1 &mdash; Token Noise Effect on Training Loss (10 seeds per condition)</div>
+  <div class="chart-title">Figure 1 - Token Noise Effect on Training Loss (10 seeds per condition)</div>
   <canvas id="chart-noise"></canvas>
   <div class="chart-caption">Error bars show &plusmn;1 standard deviation. The noise condition produces significantly higher loss (p=0.0018, Hedges' g=1.57) with 2&times; higher variance.</div>
 </div>
@@ -272,24 +272,24 @@ I ran 10 seeds per condition for statistical rigor. The results came back fast, 
 </a>
 
 <div class="callout">
-  <p><strong>WandB Training Curves (<a href="https://wandb.ai/facilitair/noisy-student?nw=nwuserblakeledden" target="_blank">view project</a>):</strong> The V1 <code>train/loss</code> panels show all 20 runs (10 seeds &times; 2 conditions) descending sharply from ~2,000 to ~500 within the first 10 steps, then stabilizing. The noise condition runs consistently settle at higher final loss values with visibly wider spread between seeds. The <code>train/confidence</code> panel &mdash; tracking reward model confidence &mdash; rises from 0.20 to 0.35 over the 40-step training window, with the no-noise runs reaching higher peak confidence. The separation between conditions is evident in both metrics, consistent with the p=0.0018 statistical result.</p>
+  <p><strong>WandB Training Curves (<a href="https://wandb.ai/facilitair/noisy-student?nw=nwuserblakeledden" target="_blank">view project</a>):</strong> The V1 <code>train/loss</code> panels show all 20 runs (10 seeds &times; 2 conditions) descending sharply from ~2,000 to ~500 within the first 10 steps, then stabilizing. The noise condition runs consistently settle at higher final loss values with visibly wider spread between seeds. The <code>train/confidence</code> panel - tracking reward model confidence - rises from 0.20 to 0.35 over the 40-step training window, with the no-noise runs reaching higher peak confidence. The separation between conditions is evident in both metrics, consistent with the p=0.0018 statistical result.</p>
 </div>
 
-Token-level noise didn't just fail to help &mdash; it actively harmed training, with a large effect size (g=1.57) and double the variance. In hindsight, the reason is obvious: a flipped photo of a cat is still recognizably a cat, but `"Write a function to calculate Fibonacci numbers"` with tokens dropped becomes `"Write function calculate"` &mdash; incoherent gibberish. Image augmentations lie on the data manifold. Token dropout does not lie on the text manifold.
+Token-level noise didn't just fail to help - it actively hurt training, with a large effect size (g=1.57) and double the variance. In hindsight this makes sense: a flipped photo of a cat is still recognizably a cat, but `"Write a function to calculate Fibonacci numbers"` with tokens dropped becomes `"Write function calculate"` - gibberish. Image augmentations stay on the data manifold. Token dropout doesn't.
 
 <div class="callout">
   <p><strong>The lesson that shaped everything after:</strong> The noisy student mechanism works because noise regularizes without destroying meaning. For language, meaning is too densely packed in every token for dropout-style perturbation. If noise was going to play a role, it would have to come from somewhere else entirely.</p>
 </div>
 
-This negative result took about 8 GPU-hours and ~$6 to produce. It was the cheapest experiment of the project, and arguably the most important &mdash; it ruled out the simplest adaptation path and forced a fundamental redesign.
+This negative result took about 8 GPU-hours and ~$6. Cheapest experiment of the project, and probably the most important - it killed the simplest adaptation path and forced a full redesign.
 
 ---
 
-<div class="section-num">Week 2 &mdash; The Crisis</div>
+<div class="section-num">Week 2 - The Crisis</div>
 
 ## V2: Redesign, Overfitting, and Debugging
 
-The V1 failure led to a fundamental rethinking. Instead of injecting noise explicitly, what if the natural variance of language model sampling &mdash; generating diverse outputs at temperature 0.7 &mdash; served as the "noise"? And instead of relying on teacher confidence to filter pseudo-labels, what if we *verified* them? Code can be executed. Math answers can be checked. This was the core insight that became V2: replace explicit noise with sampling variance, replace teacher confidence with automatic verification, replace distillation with RLVR.
+V1 failing forced me to rethink the whole approach. Instead of injecting noise explicitly, what if the natural variance of language model sampling - generating diverse outputs at temperature 0.7 - served as the "noise"? And instead of relying on teacher confidence to filter pseudo-labels, what if I *verified* them? Code can be executed. Math answers can be checked. That became V2: replace explicit noise with sampling variance, replace teacher confidence with automatic verification, replace distillation with RLVR.
 
 The algorithm was simple in theory:
 
@@ -302,13 +302,13 @@ For each iteration i = 0, 1, ..., N-1:
   5. Merge labeled data with accepted pseudo-labels for next iteration
 ```
 
-Following the original proposal's step 4, the implementation relabels the entire unlabeled pool each iteration using the improved model &mdash; not just the newly added data. In practice, with pseudo-label acceptance already above 93%, relabeling changed very little: the improved model accepted a few more problems (e.g., 4,685 &rarr; 4,714 in the scarcity run) but the overall composition was nearly identical. Pseudo-labeling is skipped on the final iteration since no further training follows.
+Following the original proposal's step 4, the implementation relabels the entire unlabeled pool each iteration using the improved model - not just the newly added data. In practice, with pseudo-label acceptance already above 93%, relabeling changed very little: the improved model accepted a few more problems (e.g., 4,685 &rarr; 4,714 in the scarcity run) but the overall composition was nearly identical. Pseudo-labeling is skipped on the final iteration since no further training follows.
 
 ### The Overfitting Wall
 
-The first V2 runs produced alarming results: **training pass rate hit 87&ndash;100%, but evaluation pass@1 sat at 9&ndash;14%.** The model was memorizing the training data perfectly while learning nothing generalizable. Even worse, pseudo-labeling accepted only 6 out of 120 problems (5%) &mdash; the pipeline was starving itself of training signal.
+The first V2 runs produced alarming results: **training pass rate hit 87-100%, but evaluation pass@1 sat at 9-14%.** The model was memorizing the training data perfectly while learning nothing generalizable. Even worse, pseudo-labeling accepted only 6 out of 120 problems (5%) - the pipeline was starving itself of training signal.
 
-This turned out to be a multi-parameter problem. The original hyperparameters from the V1 experiment (learning rate 1e-5, no weight decay, confidence threshold 0.5) were all wrong for RLVR self-training. RL gradients are noisier than supervised gradients, so the model overfit faster. The confidence threshold of 0.5 required that at least 4 of 8 consensus samples be verified-correct &mdash; far too strict for bootstrapping. It took several debugging cycles to identify and fix all four problems simultaneously:
+This turned out to be a multi-parameter problem. The original hyperparameters from the V1 experiment (learning rate 1e-5, no weight decay, confidence threshold 0.5) were all wrong for RLVR self-training. RL gradients are noisier than supervised gradients, so the model overfit faster. The confidence threshold of 0.5 required that at least 4 of 8 consensus samples be verified-correct - far too strict for bootstrapping. It took several debugging cycles to identify and fix all four problems simultaneously:
 
 <div class="table-wrap">
 <table>
@@ -317,39 +317,39 @@ This turned out to be a multi-parameter problem. The original hyperparameters fr
   </thead>
   <tbody>
     <tr><td>Learning rate</td><td>1e-5</td><td>5e-6</td><td>RL gradients are noisy; slower learning prevents overfitting</td></tr>
-    <tr><td>Confidence threshold</td><td>0.5</td><td>0.125</td><td>0.5 requires &ge;4/8 correct &mdash; too strict for early-stage models</td></tr>
+    <tr><td>Confidence threshold</td><td>0.5</td><td>0.125</td><td>0.5 requires &ge;4/8 correct - too strict for early-stage models</td></tr>
     <tr><td>Weight decay</td><td>0.0</td><td>0.01</td><td>L2 regularization</td></tr>
     <tr><td>Early stopping</td><td>None</td><td>Patience=5</td><td>Halt training before regression sets in</td></tr>
   </tbody>
 </table>
 </div>
 
-The confidence threshold change was the most impactful. Lowering it from 0.5 to 0.125 (accepting a pseudo-label if at least 1 of 8 samples is correct) dramatically increased pseudo-label yield while still guaranteeing that every accepted example had at least one verified-correct solution. This was the difference between a self-training pipeline that starves and one that feeds itself.
+The confidence threshold was the big one. Lowering it from 0.5 to 0.125 (accepting a pseudo-label if at least 1 of 8 samples is correct) massively increased pseudo-label yield while still guaranteeing every accepted example had at least one verified-correct solution. This was the difference between a self-training pipeline that starves and one that feeds itself.
 
 ### First Try: Code Generation (The 8% Wall)
 
-With the overfitting resolved, I ran the full V2 pipeline on MBPP code generation &mdash; 164 labeled problems, 374 unlabeled, 3 iterations. The result: **8% baseline pass@1, only 25 pseudo-labels generated (3.5% acceptance), +1% improvement.**
+With the overfitting resolved, I ran the full V2 pipeline on MBPP code generation - 164 labeled problems, 374 unlabeled, 3 iterations. The result: **8% baseline pass@1, only 25 pseudo-labels generated (3.5% acceptance), +1% improvement.**
 
-Something was deeply wrong with the baseline. I spent time investigating, re-evaluating all 13 accepted pseudo-labeled examples against original test cases, analyzing model output patterns, and examining the code extraction logic. The investigation (documented in full in [CODE_BASELINE_INVESTIGATION.md](https://github.com/bledden/tinker-experiments-standalone/blob/main/noisy-student/CODE_BASELINE_INVESTIGATION.md)) revealed three compounding factors:
+Something was wrong with the baseline. I dug into it - re-evaluated all 13 accepted pseudo-labeled examples against original test cases, looked at model output patterns, and checked the code extraction logic. The investigation (documented in [CODE_BASELINE_INVESTIGATION.md](https://github.com/bledden/tinker-experiments-standalone/blob/main/noisy-student/CODE_BASELINE_INVESTIGATION.md)) turned up three compounding factors:
 
 1. **Verbose multi-language outputs:** The model generated comprehensive "educational" responses with Python, JavaScript, *and* Java implementations, blowing through the 512-token limit.
 2. **Truncation:** 92.3% of responses were cut off mid-function, producing non-executable code.
 3. **Function name mismatches:** MBPP tests assert against specific names like `remove_Occ`, but the model generated `removeOccurrence` or `remove_occurrence`.
 
-The pseudo-labeling system was working correctly &mdash; all 25 accepted labels passed verification. The problem was that the model simply couldn't produce correct code often enough to generate meaningful training signal. At 3.5% acceptance, the self-training loop had almost nothing to learn from.
+The pseudo-labeling system itself was working fine - all 25 accepted labels passed verification. The problem was that the model just couldn't produce correct code often enough to generate training signal. At 3.5% acceptance, the self-training loop had almost nothing to learn from.
 
 ---
 
-<div class="section-num">Week 3 &mdash; The Breakthrough</div>
+<div class="section-num">Week 3 - The Breakthrough</div>
 
 ## Pivoting to Math: Where Self-Training Actually Worked
 
-The code generation failure raised an important question: was the self-training approach fundamentally broken, or was it just the wrong task? Math reasoning on GSM8K offered a natural comparison &mdash; the same model, same pipeline, same hyperparameters, but a task where the model was already competent (84% baseline vs 8%).
+The code results raised the obvious question: was the self-training approach broken, or was it just the wrong task? Math reasoning on GSM8K was a good test - same model, same pipeline, same hyperparameters, but a task where the model was already competent (84% baseline vs 8%).
 
-I ran 7 seeds (42&ndash;48) for statistical rigor, with 3 iterations per seed. The contrast with code was immediate and dramatic.
+I ran 7 seeds (42-48) with 3 iterations per seed. The contrast with code was stark.
 
 <div class="chart-container">
-  <div class="chart-title">Figure 2 &mdash; GSM8K Pass@1 Across Seeds and Iterations</div>
+  <div class="chart-title">Figure 2 - GSM8K Pass@1 Across Seeds and Iterations</div>
   <canvas id="chart-math"></canvas>
   <div class="chart-caption">Individual seed trajectories shown in light lines; bold line shows the mean. 6 of 7 seeds show positive improvement; seed 42 regressed after iteration 1. Aggregate: 84.1% &rarr; 88.0% (+3.9pp, p=0.002).</div>
 </div>
@@ -408,10 +408,10 @@ I ran 7 seeds (42&ndash;48) for statistical rigor, with 3 iterations per seed. T
 </div>
 
 <div class="callout">
-  <p><strong>WandB Iteration Metrics (<a href="https://wandb.ai/facilitair/noisy-student-v2/reports/Noisy-Student-v2--VmlldzoxNTg0MTEzNA" target="_blank">view report</a>):</strong> The V2 dashboard tracks all 9 runs (7 math seeds + 2 scarcity seeds) across three iteration panels. The <code>iter0/test_pass@1</code> chart shows math seeds clustered tightly between 0.82&ndash;0.86, with the two scarcity runs (L10) at 0.83 and 0.87. By <code>iter2/test_pass@1</code>, the spread widens: most math seeds reach 0.87&ndash;0.92, while the scarcity L10/seed42 run hits 0.92 at the top. The <code>pseudo_labels</code> panels reveal the starkest difference &mdash; math runs generate ~350 pseudo-labels per iteration (flat bars), while the scarcity runs produce 4,600&ndash;4,700 (dominant bars dwarfing the rest), reflecting the 13&times; larger unlabeled pool. The <code>pseudo_label_rate</code> panels show both conditions achieving &gt;93% acceptance, confirming pseudo-label quality is consistent regardless of pool size.</p>
+  <p><strong>WandB Iteration Metrics (<a href="https://wandb.ai/facilitair/noisy-student-v2/reports/Noisy-Student-v2--VmlldzoxNTg0MTEzNA" target="_blank">view report</a>):</strong> The V2 dashboard tracks all 9 runs (7 math seeds + 2 scarcity seeds) across three iteration panels. The <code>iter0/test_pass@1</code> chart shows math seeds clustered tightly between 0.82-0.86, with the two scarcity runs (L10) at 0.83 and 0.87. By <code>iter2/test_pass@1</code>, the spread widens: most math seeds reach 0.87-0.92, while the scarcity L10/seed42 run hits 0.92 at the top. The <code>pseudo_labels</code> panels reveal the starkest difference - math runs generate ~350 pseudo-labels per iteration (flat bars), while the scarcity runs produce 4,600-4,700 (dominant bars dwarfing the rest), reflecting the 13&times; larger unlabeled pool. The <code>pseudo_label_rate</code> panels show both conditions achieving &gt;93% acceptance, confirming pseudo-label quality is consistent regardless of pool size.</p>
 </div>
 
-Six of seven seeds improved. The one that didn't &mdash; seed 42, which regressed by 2% despite hitting 94% during training &mdash; is exactly why running multiple seeds matters. A single-seed experiment could have told a misleading story in either direction.
+Six of seven seeds improved. The one that didn't - seed 42, which regressed 2% despite hitting 94% during training - is why running multiple seeds matters. A single-seed experiment could have told a completely different story.
 
 ### Pseudo-Labeling Statistics
 
@@ -425,10 +425,10 @@ Six of seven seeds improved. The one that didn't &mdash; seed 42, which regresse
     </tr>
   </thead>
   <tbody>
-    <tr><td>Acceptance rate</td><td>93.6%</td><td>91&ndash;96%</td></tr>
-    <tr><td>Average confidence</td><td>0.94</td><td>0.93&ndash;0.96</td></tr>
-    <tr><td>Pseudo-labels per iteration</td><td>~350</td><td>341&ndash;359</td></tr>
-    <tr><td>Total pseudo-labels per seed</td><td>~700</td><td>686&ndash;715</td></tr>
+    <tr><td>Acceptance rate</td><td>93.6%</td><td>91-96%</td></tr>
+    <tr><td>Average confidence</td><td>0.94</td><td>0.93-0.96</td></tr>
+    <tr><td>Pseudo-labels per iteration</td><td>~350</td><td>341-359</td></tr>
+    <tr><td>Total pseudo-labels per seed</td><td>~700</td><td>686-715</td></tr>
   </tbody>
 </table>
 </div>
@@ -438,33 +438,33 @@ Six of seven seeds improved. The one that didn't &mdash; seed 42, which regresse
 The contrast between math and code told a clear story. Putting them side-by-side made the pattern obvious:
 
 <div class="chart-container">
-  <div class="chart-title">Figure 3 &mdash; Bootstrap Capability Threshold: Math vs. Code</div>
+  <div class="chart-title">Figure 3 - Bootstrap Capability Threshold: Math vs. Code</div>
   <canvas id="chart-bootstrap"></canvas>
-  <div class="chart-caption">Self-training requires sufficient baseline capability to generate pseudo-labels. At 84% baseline (math), 93% of unlabeled problems yield usable pseudo-labels. At 8% baseline (code), only 3.5% do &mdash; insufficient signal for learning.</div>
+  <div class="chart-caption">Self-training requires sufficient baseline capability to generate pseudo-labels. At 84% baseline (math), 93% of unlabeled problems yield usable pseudo-labels. At 8% baseline (code), only 3.5% do - insufficient signal for learning.</div>
 </div>
 
-Self-training is fundamentally a *bootstrapping* technique &mdash; it amplifies existing capability but cannot create it from scratch. When the model already solves most problems (84% on math), consensus pseudo-labeling floods the pipeline with high-quality training data. When it rarely produces correct solutions (8% on code), the pipeline starves. I estimate the practical threshold at roughly 60&ndash;80% baseline pass@1, though the exact boundary depends on the task.
+Self-training is a bootstrapping technique - it amplifies existing capability but can't create it from nothing. When the model already solves most problems (84% on math), consensus pseudo-labeling floods the pipeline with high-quality training data. When it rarely produces correct solutions (8% on code), the pipeline starves. I'd estimate the practical threshold at roughly 60-80% baseline pass@1, though the exact boundary depends on the task.
 
-Most improvement occurred in iterations 0 and 1. Iteration 2 sometimes produced regression, suggesting diminishing returns and overfitting risk from extended self-training. The best evaluation scores during training (92&ndash;96%) consistently exceeded final test performance (83&ndash;92%), indicating some distribution shift between training/evaluation and held-out test data.
+Most improvement came in iterations 0 and 1. Iteration 2 sometimes caused regression, which points to diminishing returns and overfitting risk from extended self-training. The best eval scores during training (92-96%) consistently exceeded final test performance (83-92%), suggesting some distribution shift between training/evaluation and held-out test data.
 
 ---
 
-<div class="section-num">Week 4 &mdash; The Unfinished Experiment</div>
+<div class="section-num">Week 4 - The Unfinished Experiment</div>
 
 ## Data Scarcity: The Most Interesting Question, Cut Short
 
-After the math results came in, I realized something uncomfortable: V2 hadn't actually tested what the original proposal asked for. The proposal was about *bootstrapping limited labeled data*. V2 used 164 labeled examples &mdash; a moderate amount &mdash; paired with only 374 unlabeled problems. That's a 2.3&times; expansion ratio. Not exactly "limited labeled data, large unlabeled pool."
+After the math results came in, I realized V2 hadn't actually tested what the original proposal asked for. The proposal was about *bootstrapping limited labeled data*. V2 used 164 labeled examples - a moderate amount - paired with only 374 unlabeled problems. That's a 2.3&times; expansion ratio. Not exactly "limited labeled data, large unlabeled pool."
 
-I designed a V3 scarcity experiment to test the real question: does self-training help more when labeled data is genuinely scarce? Five conditions (10, 20, 50, 100, 164 labeled examples), each with 5,000 unlabeled problems, across 5 seeds each &mdash; 25 total runs.
+I designed a V3 scarcity experiment to test the real question: does self-training help more when labeled data is genuinely scarce? Five conditions (10, 20, 50, 100, 164 labeled examples), each with 5,000 unlabeled problems, across 5 seeds each - 25 total runs.
 
-> **H1:** Self-training improvement correlates negatively with labeled data availability &mdash; less labeled data yields proportionally greater benefit from self-training.
+> **H1:** Self-training improvement correlates negatively with labeled data availability - less labeled data yields proportionally greater benefit from self-training.
 
-Due to billing exhaustion on the Tinker platform, only **1 of 25 planned runs** completed fully (L10/seed42), with a second run partially completing (L10/seed43, 2 of 3 iterations). The remaining 23 runs terminated immediately with HTTP 402 errors.
+Billing ran out on the Tinker platform. Only **1 of 25 planned runs** completed fully (L10/seed42), with a second run partially completing (L10/seed43, 2 of 3 iterations). The remaining 23 runs died immediately with HTTP 402 errors.
 
-But that one complete run produced the most surprising result of the entire project.
+But that one complete run produced the most surprising result of the project.
 
 <div class="chart-container">
-  <div class="chart-title">Figure 4 &mdash; Scarcity Experiment: L10/Seed 42 Iteration Dynamics</div>
+  <div class="chart-title">Figure 4 - Scarcity Experiment: L10/Seed 42 Iteration Dynamics</div>
   <canvas id="chart-scarcity"></canvas>
   <div class="chart-caption">Left axis: test pass@1 accuracy climbing from 87% to 92% across 3 iterations. Right axis: training data size expanding from 10 initial labeled examples to 4,724 through pseudo-labeling. Early stopping triggered at step 151/200 in iteration 2.</div>
 </div>
@@ -486,12 +486,12 @@ But that one complete run produced the most surprising result of the entire proj
   <tbody>
     <tr><td>0</td><td>10</td><td>90%</td><td>87%</td><td>4,685 / 5,000</td><td>93.7%</td></tr>
     <tr><td>1</td><td>4,695</td><td>94%</td><td>90%</td><td>4,714 / 5,000</td><td>94.3%</td></tr>
-    <tr><td>2</td><td>4,724</td><td>96%</td><td>92%</td><td>&mdash; (final)</td><td>&mdash;</td></tr>
+    <tr><td>2</td><td>4,724</td><td>96%</td><td>92%</td><td> - (final)</td><td> -</td></tr>
   </tbody>
 </table>
 </div>
 
-**The baseline defied expectations.** I expected 10 labeled examples to produce a ~30&ndash;40% baseline. Instead: 87%. Qwen3-30B-A3B already knows how to do GSM8K math from pretraining. The labeled examples provide a fine-tuning signal, not fundamental capability. This was a conceptual error in the experiment design &mdash; reducing labeled data from 164 to 10 doesn't proportionally reduce capability when the model already has the skill baked in.
+**The baseline was way higher than expected.** I expected 10 labeled examples to produce a ~30-40% baseline. Instead: 87%. Qwen3-30B-A3B already knows how to do GSM8K math from pretraining. The labeled examples provide a fine-tuning signal, not the underlying capability. This was a design mistake - reducing labeled data from 164 to 10 doesn't proportionally reduce capability when the model already has the skill baked in.
 
 **But the improvement was larger.** +5% with 10 labels beat +3.9% with 164 labels. Why?
 
@@ -519,20 +519,20 @@ But that one complete run produced the most surprising result of the entire proj
 The comparison confounds two variables: labeled set size (10 vs 164) and unlabeled pool size (5,000 vs 374). The larger pool produced 13&times; more pseudo-labels (9,399 vs ~700). Which variable matters more?
 
 <div class="callout">
-  <p><strong>Reframed hypothesis:</strong> Rather than "self-training helps more when labeled data is scarce," the data is more consistent with "self-training helps more when the unlabeled pool is larger." These are related but distinct claims &mdash; the first suggests self-training as a response to data poverty, the second as a way to exploit data abundance. The full 25-run experiment was designed to disentangle them. The infrastructure is ready. The billing is not.</p>
+  <p><strong>Reframed hypothesis:</strong> Rather than "self-training helps more when labeled data is scarce," the data is more consistent with "self-training helps more when the unlabeled pool is larger." These are related but distinct claims - the first suggests self-training as a response to data poverty, the second as a way to exploit data abundance. The full 25-run experiment was designed to disentangle them. The infrastructure is ready. The billing is not.</p>
 </div>
 
 ---
 
-<div class="section-num">Throughout &mdash; The Background Battle</div>
+<div class="section-num">Throughout - The Background Battle</div>
 
 ## Infrastructure and Engineering Challenges
 
-The experimental narrative above tells a clean story of hypotheses and results. The reality involved constant infrastructure firefighting. Remote-compute RLVR experiments at this scale present engineering challenges rarely discussed in papers but which dominated day-to-day work.
+The narrative above reads like a clean story of hypotheses and results. The reality was mostly infrastructure firefighting. Remote-compute RLVR experiments at this scale come with engineering problems that papers rarely mention but that dominated the day-to-day.
 
 ### API Timeouts
 
-The Tinker platform's `save_weights_and_get_sampling_client()` intermittently timed out during long runs (>600s), causing irrecoverable experiment crashes &mdash; including one during seed 44 at step 130. I added retry logic with extended timeouts at all three checkpoint-save call sites:
+The Tinker platform's `save_weights_and_get_sampling_client()` would intermittently time out during long runs (>600s), crashing experiments with no way to recover - including one during seed 44 at step 130. I added retry logic with extended timeouts at all three checkpoint-save call sites:
 
 ```python
 max_retries = 3
@@ -551,16 +551,16 @@ for attempt in range(max_retries):
 
 ### Pseudo-Labeling at Scale
 
-The V3 scarcity experiment required 40,000 inference calls per iteration (5,000 problems &times; K=8). The initial implementation made 8 sequential API calls per problem &mdash; 83 hours per pseudo-labeling phase. Switching to batched `num_samples=8` calls achieved a **6&times; speedup** (down to ~14 hours). Additional reliability work: per-sample timeouts of 300s, exponential backoff retry logic, per-problem exception handling, and progress logging every 50 problems.
+The V3 scarcity experiment needed 40,000 inference calls per iteration (5,000 problems &times; K=8). The initial implementation made 8 sequential API calls per problem - 83 hours per pseudo-labeling phase. Switching to batched `num_samples=8` calls got a **6&times; speedup** (down to ~14 hours). I also added per-sample timeouts of 300s, exponential backoff retry logic, per-problem exception handling, and progress logging every 50 problems.
 
 ### Resume Logic
 
-With 25 planned runs expected to take 100+ hours, the scarcity experiment needed to survive interruptions. I implemented checkpoint-based resume logic: before running each condition, the script checks for a valid `final_results.json` from a prior run. Completed runs are loaded from disk; only incomplete runs are re-attempted. This turned out to be prescient &mdash; when billing ran out, the 1 completed and 1 partial run were preserved.
+With 25 planned runs expected to take 100+ hours, the scarcity experiment needed to survive interruptions. I added checkpoint-based resume: before running each condition, the script checks for a valid `final_results.json` from a prior run. Completed runs load from disk; only incomplete runs get re-attempted. Good thing I did - when billing ran out, the 1 completed and 1 partial run were preserved.
 
 ### Compute Budget
 
 <div class="chart-container">
-  <div class="chart-title">Figure 5 &mdash; Compute Budget Across Experimental Phases</div>
+  <div class="chart-title">Figure 5 - Compute Budget Across Experimental Phases</div>
   <canvas id="chart-compute"></canvas>
   <div class="chart-caption">Total: ~186 GPU-hours, ~$140. The scarcity experiment (72h) was the most expensive per-seed due to the 5,000-problem pseudo-labeling pool.</div>
 </div>
@@ -578,7 +578,7 @@ With 25 planned runs expected to take 100+ hours, the scarcity experiment needed
 
 <div class="finding">
   <div class="finding-label">Finding 2</div>
-  <p><strong>Consensus-based self-training works &mdash; confirming the proposal's core hypothesis.</strong> The original Thinking Machines Lab proposal predicted that explicit noise injection "might not be necessary&hellip; because there's already noise in the student from sampling (whereas the target is obtained via consensus, which reduces noise)." Our experiments confirm this precisely. Replacing explicit noise with sampling variance + verification-based consensus filtering produces statistically significant improvement on GSM8K: +3.9pp (84.1% &rarr; 88.0%, p=0.002, d=1.53, N=7 seeds). The student generates diverse outputs at temperature 0.7 (noise); majority voting over K=8 verified samples collapses that variance into a clean pseudo-label (denoising). This asymmetry &mdash; noisy generation, consensus filtering &mdash; is a more natural regularization mechanism for language than token dropout ever was.</p>
+  <p><strong>Consensus-based self-training works - confirming the proposal's core hypothesis.</strong> The original Thinking Machines Lab proposal predicted that explicit noise injection "might not be necessary&hellip; because there's already noise in the student from sampling (whereas the target is obtained via consensus, which reduces noise)." These experiments confirm that. Replacing explicit noise with sampling variance + verification-based consensus filtering gives statistically significant improvement on GSM8K: +3.9pp (84.1% &rarr; 88.0%, p=0.002, d=1.53, N=7 seeds). The student generates diverse outputs at temperature 0.7 (noise); majority voting over K=8 verified samples collapses that variance into a clean pseudo-label (denoising). This asymmetry - noisy generation, consensus filtering - turns out to be a more natural regularization mechanism for language than token dropout.</p>
 </div>
 
 <div class="finding">
@@ -588,14 +588,14 @@ With 25 planned runs expected to take 100+ hours, the scarcity experiment needed
 
 <div class="finding">
   <div class="finding-label">Finding 4 <span style="font-weight:400;color:rgb(var(--gray));">(preliminary)</span></div>
-  <p><strong>Data expansion ratio may be an important lever.</strong> A single run with 500&times; expansion ratio achieved +5% improvement (9,399 pseudo-labels), compared to +3.9% at 2.3&times; ratio (~700 pseudo-labels). This is one data point, not a conclusion &mdash; the 25-run experiment is needed.</p>
+  <p><strong>Data expansion ratio may be an important lever.</strong> A single run with 500&times; expansion ratio achieved +5% improvement (9,399 pseudo-labels), compared to +3.9% at 2.3&times; ratio (~700 pseudo-labels). This is one data point, not a conclusion - the 25-run experiment is needed.</p>
 </div>
 
 ### Practical Decision Framework
 
-If you're considering self-training with RLVR, here is what I'd recommend based on these experiments:
+If you're considering self-training with RLVR, here's what I'd suggest based on these experiments:
 
-1. **Check baseline capability first.** Below ~60&ndash;80%, self-training is unlikely to help. Invest in better base models or supervised data instead.
+1. **Check baseline capability first.** Below ~60-80%, self-training is unlikely to help. Invest in better base models or supervised data instead.
 2. **Maximize the unlabeled pool.** Preliminary evidence suggests pseudo-label volume matters more than labeled set size.
 3. **Stop at 2 iterations.** Diminishing returns after iteration 1. Iteration 2 risks regression.
 4. **Run multiple seeds.** Variance is substantial (std = 2.8%). A single seed can mislead you.
@@ -603,11 +603,11 @@ If you're considering self-training with RLVR, here is what I'd recommend based 
 
 ### Limitations
 
-This work has clear limitations. The code experiment was a single seed. The scarcity experiment has one complete data point. The test set was only 100 problems (5% improvement = 5 additional correct answers). All experiments used a single model family (Qwen3-30B-A3B). No ablation studies on consensus size, confidence threshold, or iteration count. No comparison against DPO, supervised distillation, or other semi-supervised approaches. The ceiling effect on GSM8K (84% baseline) limits the observable improvement &mdash; harder benchmarks like MATH or AIME would provide more headroom.
+Plenty of limitations here. The code experiment was a single seed. The scarcity experiment has one complete data point. The test set was only 100 problems (5% improvement = 5 additional correct answers). All experiments used a single model family (Qwen3-30B-A3B). No ablation studies on consensus size, confidence threshold, or iteration count. No comparison against DPO, supervised distillation, or other semi-supervised approaches. The ceiling effect on GSM8K (84% baseline) limits the observable improvement - harder benchmarks like MATH or AIME would give more headroom.
 
 ### What's Next
 
-The most immediate priority is completing the data scarcity experiment &mdash; 24 remaining runs across 5 conditions &mdash; to test whether self-training benefit scales with data expansion ratio. The experimental infrastructure (batched sampling, retry logic, resume checkpointing) is ready and waiting for compute budget. Beyond that: harder benchmarks for more headroom, code-specialized models for a fair code assessment, and systematic ablation studies to understand the parameter space.
+Next up is finishing the data scarcity experiment - 24 remaining runs across 5 conditions - to test whether self-training benefit scales with data expansion ratio. The infrastructure (batched sampling, retry logic, resume checkpointing) is ready; I just need compute budget. After that: harder benchmarks for more headroom, code-specialized models for a fair code assessment, and ablation studies to map the parameter space.
 
 Each failure in this project directly produced the next experiment's design. Token noise failed, so I replaced it with sampling variance. Code generation hit the bootstrap wall, so I pivoted to math. The math result showed the original proposal's question was still untested, so I designed the scarcity experiment. The scarcity experiment ran out of compute before it could answer its own question. Research is like that.
 
@@ -621,7 +621,7 @@ Each failure in this project directly produced the next experiment's design. Tok
     <tr>
       <th>Parameter</th>
       <th>Exp. 1 (V1)</th>
-      <th>Exp. 2&ndash;4 (V2/V3)</th>
+      <th>Exp. 2-4 (V2/V3)</th>
     </tr>
   </thead>
   <tbody>
@@ -629,9 +629,9 @@ Each failure in this project directly produced the next experiment's design. Tok
     <tr><td>LoRA rank</td><td>32</td><td>32</td></tr>
     <tr><td>Weight decay</td><td>0.0</td><td>0.01</td></tr>
     <tr><td>Steps / iteration</td><td>50</td><td>200 (early stopping)</td></tr>
-    <tr><td>Temperature</td><td>&mdash;</td><td>0.7</td></tr>
-    <tr><td>Consensus samples (K)</td><td>&mdash;</td><td>8</td></tr>
-    <tr><td>Confidence threshold</td><td>&mdash;</td><td>0.125 (&ge;1/8 correct)</td></tr>
+    <tr><td>Temperature</td><td> -</td><td>0.7</td></tr>
+    <tr><td>Consensus samples (K)</td><td> -</td><td>8</td></tr>
+    <tr><td>Confidence threshold</td><td> -</td><td>0.125 (&ge;1/8 correct)</td></tr>
   </tbody>
 </table>
 </div>
@@ -662,7 +662,7 @@ Each failure in this project directly produced the next experiment's design. Tok
 
 ## Plan to Complete the Experiments
 
-The scarcity experiment is the most important unfinished work. It was designed to answer the central question the Thinking Machines Lab proposal actually asked: does self-training help *more* when labeled data is scarce? One run out of 25 completed before billing ran out. Here is the concrete plan to finish it.
+The scarcity experiment is the most important unfinished piece. It was designed to answer the question the Thinking Machines Lab proposal actually asked: does self-training help *more* when labeled data is scarce? One run out of 25 completed before billing ran out. Here's the plan to finish it.
 
 ### Phase 1: Complete the Scarcity Experiment (24 remaining runs)
 
@@ -702,7 +702,7 @@ The resume infrastructure is already in place. When billing is restored, a singl
 python run_scarcity_experiment.py
 ```
 
-**Estimated cost:** ~$70&ndash;80 for the remaining 24 runs (~$3.20 per run). **Estimated compute:** ~90 GPU-hours across training, pseudo-labeling (5,000 &times; K=8 per iteration), and evaluation.
+**Estimated cost:** ~$70-80 for the remaining 24 runs (~$3.20 per run). **Estimated compute:** ~90 GPU-hours across training, pseudo-labeling (5,000 &times; K=8 per iteration), and evaluation.
 
 ### Phase 2: Cross-Condition Analysis
 
@@ -743,32 +743,32 @@ Per condition: paired t-tests (initial vs. final), Cohen's d effect sizes, 95% c
 
 Depending on the scarcity results, the next steps branch:
 
-1. **Harder benchmarks (MATH, AIME).** GSM8K has a ceiling effect at 84% baseline. Harder math benchmarks provide more headroom for measuring improvement and would test whether the bootstrap threshold shifts with task difficulty.
-2. **Code-specialized models.** The 8% MBPP baseline was partly due to the model generating verbose multi-language responses. A code-specialized model (e.g., Qwen3-Coder if available on Tinker) would provide a fairer test of self-training for code generation.
-3. **Ablation studies.** Consensus size (K=4, 8, 16), confidence threshold (0.125, 0.25, 0.5), number of iterations (1, 2, 3, 5). These are needed to understand which parameters matter most and to provide practical tuning guidance.
+1. **Harder benchmarks (MATH, AIME).** GSM8K has a ceiling effect at 84% baseline. Harder math benchmarks give more headroom for measuring improvement and would test whether the bootstrap threshold shifts with task difficulty.
+2. **Code-specialized models.** The 8% MBPP baseline was partly because the model generated verbose multi-language responses. A code-specialized model (e.g., Qwen3-Coder if available on Tinker) would give a fairer test of self-training for code generation.
+3. **Ablation studies.** Consensus size (K=4, 8, 16), confidence threshold (0.125, 0.25, 0.5), number of iterations (1, 2, 3, 5). Need these to understand which parameters matter most.
 4. **Baseline comparisons, including the distillation ablation.** The original proposal explicitly suggests replacing RL steps with supervised distillation as a variation. V1 used distillation but with a different noise strategy; the comparison was never made on equal footing. How does RLVR self-training compare to distillation-based self-training, DPO, or standard fine-tuning on just the labeled data? This ablation was planned in the V2 design ("Supervised-ST" condition) but never run. Without it, we cannot attribute the improvement to RLVR specifically vs. the iterative pseudo-labeling framework itself.
 
 ### Success Criteria
 
-The minimum viable result: at least 4 of 5 conditions complete, cross-condition correlation is statistically significant (p &lt; 0.05), and results tell a coherent story about when self-training is worth the compute investment. The ideal result: all 5 conditions complete, strong negative correlation (r &lt; &minus;0.7), a clear "sweet spot" identified for self-training ROI, and a publishable finding &mdash; either standalone or combined with the V2 results.
+Minimum viable result: at least 4 of 5 conditions complete, cross-condition correlation statistically significant (p &lt; 0.05), and results that tell a coherent story about when self-training is worth the compute. Ideal result: all 5 conditions complete, strong negative correlation (r &lt; &minus;0.7), a clear "sweet spot" for self-training ROI, and a publishable finding - standalone or combined with V2.
 
 <div class="callout">
-  <p><strong>The bottom line:</strong> The infrastructure works. The experimental design is validated. The single complete scarcity run (87% &rarr; 92%) suggests there is something real to find. What is needed now is compute budget and the patience to run 24 more seeds to completion.</p>
+  <p><strong>The bottom line:</strong> The infrastructure works. The experiment design is validated. The single complete scarcity run (87% &rarr; 92%) suggests there's something real here. What's needed now is compute budget and the patience to run 24 more seeds.</p>
 </div>
 
 ---
 
 ## Relation to Concurrent Work
 
-Two concurrent lines of work explore closely related ideas. [**TTRL**](https://arxiv.org/abs/2504.16084) (Test-Time Reinforcement Learning) uses majority voting over model outputs as an RL reward signal *at test time*, achieving +211% on AIME 2024. Our approach uses the same consensus mechanism but at *training time* for pseudo-label generation &mdash; the majority vote selects training data rather than serving directly as a reward. TTRL's dramatic gains on a harder benchmark (AIME vs. GSM8K) suggest that our relatively modest +3.9% may partly reflect a ceiling effect on GSM8K, and that harder benchmarks could reveal larger benefits from consensus-based self-training.
+Two concurrent lines of work explore closely related ideas. [**TTRL**](https://arxiv.org/abs/2504.16084) (Test-Time Reinforcement Learning) uses majority voting over model outputs as an RL reward signal *at test time*, achieving +211% on AIME 2024. My approach uses the same consensus mechanism but at *training time* for pseudo-label generation - the majority vote selects training data rather than serving directly as a reward. TTRL's gains on a harder benchmark (AIME vs. GSM8K) suggest that my +3.9% may partly reflect a ceiling effect on GSM8K, and that harder benchmarks could show larger benefits from consensus-based self-training.
 
-[**"Can Large Reasoning Models Self-Train?"**](https://arxiv.org/abs/2505.21444) explores self-training in LLMs and finds that it initially helps but eventually leads to reward hacking &mdash; the model learns to exploit the reward signal rather than genuinely improve. We observed a milder version of this: seed 42 regressed in iteration 2 despite high training pass rates, and best-eval scores (92&ndash;96%) consistently exceeded final test performance (83&ndash;92%). Our early stopping mechanism (patience=5) appears to mitigate outright collapse, but the diminishing returns after iteration 1 and occasional regression in iteration 2 are consistent with the self-training instability they describe. Their findings reinforce our recommendation to stop at 2 iterations and to monitor validation-training divergence as a collapse indicator.
+[**"Can Large Reasoning Models Self-Train?"**](https://arxiv.org/abs/2505.21444) explores self-training in LLMs and finds that it initially helps but eventually leads to reward hacking - the model learns to exploit the reward signal rather than genuinely improve. I saw a milder version of this: seed 42 regressed in iteration 2 despite high training pass rates, and best-eval scores (92-96%) consistently exceeded final test performance (83-92%). My early stopping mechanism (patience=5) seems to prevent outright collapse, but the diminishing returns after iteration 1 and occasional regression in iteration 2 are consistent with the self-training instability they describe. Their findings support the recommendation to stop at 2 iterations and to watch for validation-training divergence as a collapse signal.
 
 ---
 
 ## References
 
-1. Xie, Q., Luong, M. T., Hovy, E., & Le, Q. V. (2020). [Self-training with Noisy Student improves ImageNet classification.](https://arxiv.org/abs/1911.04252) *CVPR*, 10687&ndash;10698.
+1. Xie, Q., Luong, M. T., Hovy, E., & Le, Q. V. (2020). [Self-training with Noisy Student improves ImageNet classification.](https://arxiv.org/abs/1911.04252) *CVPR*, 10687-10698.
 2. Agarwal, R., Vieillard, N., Stanczyk, P., et al. (2024). [On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes.](https://arxiv.org/abs/2306.13649) *ICLR*.
 3. [TTRL: Test-Time Reinforcement Learning.](https://arxiv.org/abs/2504.16084) arXiv:2504.16084.
 4. [Can Large Reasoning Models Self-Train?](https://arxiv.org/abs/2505.21444) arXiv:2505.21444.
