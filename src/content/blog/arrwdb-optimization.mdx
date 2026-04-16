@@ -46,7 +46,7 @@ I built a vector database in Rust with a Python API and benchmarked its HNSW sea
 | Bug fixes + algorithmic | 2,686 | 0.995 | **52x** |
 | AVX-512 + all optimizations | 17,746 | 0.786 | **341x** |
 
-All CPU benchmarks on AWS r6i.16xlarge (Intel Xeon Ice Lake, 64 vCPU, AVX-512) — the same hardware and single-threaded configuration used by ann-benchmarks.com. The [PR is submitted](https://github.com/erikbern/ann-benchmarks/pull/626).
+The headline 341x comes from the lowest-recall (ef=10) operating point, where QPS is highest. At matched recall (~0.995), the optimization is **62x**; at 0.999 recall it's **34x**. Full curve below. All CPU benchmarks on AWS r6i.16xlarge (Intel Xeon Ice Lake, 64 vCPU, AVX-512) — the same hardware and single-threaded configuration used by ann-benchmarks.com. The [PR is submitted](https://github.com/erikbern/ann-benchmarks/pull/626).
 
 ---
 
@@ -200,7 +200,7 @@ The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators proc
 | 8 | hnswlib | ~1,400 | C++ |
 | 9 | FAISS-HNSW | ~1,200 | C++ |
 
-At 0.95 recall, arrwDB reaches ~11,500 QPS — **2x faster than hnswlib** (~5,500) and ScaNN (~5,400). The top 3 algorithms use quantized graph techniques — compressed neighbor representations and product quantization during search — that arrwDB hasn't implemented. That's the next frontier.
+At ~0.95 recall (interpolated), arrwDB reaches ~7,700 QPS — roughly **1.4x faster than hnswlib** (~5,500) and ScaNN (~5,400) at the same recall. At ~0.9 recall it reaches 11,540 QPS. The top 3 algorithms use quantized graph techniques — compressed neighbor representations and product quantization during search — that arrwDB hasn't implemented. That's the next frontier.
 
 Competitor QPS values are interpolated from published ann-benchmarks results on the same hardware (r6i.16xlarge, single-threaded). arrwDB's [ann-benchmarks submission](https://github.com/erikbern/ann-benchmarks/pull/626) is pending — exact rankings will be updated once official results are available.
 
