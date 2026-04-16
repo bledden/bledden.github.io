@@ -155,7 +155,7 @@ The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators proc
 <div class="chart-container">
   <p class="chart-title">Figure 2 — Recall vs QPS (SIFT-1M, r6i.16xlarge)</p>
   <canvas id="chart-recall-qps"></canvas>
-  <p class="chart-caption">arrwDB's Pareto frontier on SIFT-1M compared to reference implementations. All on r6i.16xlarge, single-threaded. Competitor data from <a href="https://ann-benchmarks.com">ann-benchmarks.com</a> (March 2025 run).</p>
+  <p class="chart-caption">arrwDB's Pareto frontier on SIFT-1M compared to reference implementations. All benchmarks on r6i.16xlarge, single-threaded. arrwDB data from this work; hnswlib and FAISS-HNSW curves are approximate (interpolated from <a href="https://ann-benchmarks.com">ann-benchmarks.com</a> published results). Official head-to-head results pending — <a href="https://github.com/erikbern/ann-benchmarks/pull/626">PR #626</a> has been submitted to ann-benchmarks; this chart will be updated with exact comparison data once the benchmarks are run on their infrastructure.</p>
 </div>
 
 ### SIFT-1M (128d, L2)
@@ -201,6 +201,8 @@ The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators proc
 | 9 | FAISS-HNSW | ~1,200 | C++ |
 
 At 0.95 recall, arrwDB reaches ~11,500 QPS — **2x faster than hnswlib** (~5,500) and ScaNN (~5,400). The top 3 algorithms use quantized graph techniques — compressed neighbor representations and product quantization during search — that arrwDB hasn't implemented. That's the next frontier.
+
+Competitor QPS values are interpolated from published ann-benchmarks results on the same hardware (r6i.16xlarge, single-threaded). arrwDB's [ann-benchmarks submission](https://github.com/erikbern/ann-benchmarks/pull/626) is pending — exact rankings will be updated once official results are available.
 
 ---
 
