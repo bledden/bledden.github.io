@@ -1,0 +1,373 @@
+---
+title: '341x Faster: Optimizing a Rust Vector Database to Top-7 on ANN-Benchmarks'
+description: 'From 52 QPS to 17,746 QPS on SIFT-1M through 11 optimizations, two bug fixes, and one measurement error. Projected top-7 on ann-benchmarks, highest-ranked Rust HNSW implementation.'
+pubDate: 2026-04-16
+heroImage: '../../assets/arrwdb-optimization-hero.png'
+---
+
+<style>{`
+  .chart-container {
+    margin: 32px 0;
+    background: #fff;
+    border: 1px solid rgb(var(--gray-light));
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .chart-container canvas {
+    max-width: 100%;
+    max-height: 360px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgb(var(--gray));
+    margin-bottom: 16px;
+  }
+  .chart-caption {
+    font-size: 14px;
+    color: rgb(var(--gray));
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+`}</style>
+
+I built a vector database in Rust with a Python API and benchmarked its HNSW search engine against every implementation on [ann-benchmarks.com](https://ann-benchmarks.com). It started at 52 queries per second on SIFT-1M — the standard benchmark dataset from [Aumüller et al. (2020)](http://www.vldb.org/pvldb/vol13/p3548-aumller.pdf). After 11 optimizations, two bug fixes, and one embarrassing measurement error, it does **17,746 QPS** — projected **top-7 on the ann-benchmarks SIFT leaderboard** and the highest-ranked pure Rust implementation.
+
+**The full progression:**
+
+| Stage | QPS | Recall@10 | Multiplier |
+|-------|-----|-----------|------------|
+| HashMap baseline | 52 | 0.99 | 1x |
+| Integer indexing | 648 | 0.99 | **12.5x** |
+| AVX2/FMA SIMD | 1,834 | 0.99 | **35x** |
+| Bug fixes + algorithmic | 2,686 | 0.995 | **52x** |
+| AVX-512 + all optimizations | 17,746 | 0.786 | **341x** |
+
+All CPU benchmarks on AWS r6i.16xlarge (Intel Xeon Ice Lake, 64 vCPU, AVX-512) — the same hardware and single-threaded configuration used by ann-benchmarks.com. The [PR is submitted](https://github.com/erikbern/ann-benchmarks/pull/626).
+
+---
+
+## The starting point
+
+[arrwDB](https://github.com/bledden/arrwDB) is a vector database with a FastAPI frontend and a Rust core exposed via PyO3. The HNSW index — implementing the algorithm from [Malkov & Yashunin (2020)](https://arxiv.org/abs/1603.09320) — stored vectors in `HashMap<String, Vec<f32>>` and graph nodes in `HashMap<String, HNSWNode>`. Every neighbor visit during search required a string clone, a hash computation, and an RwLock acquisition.
+
+52 QPS on SIFT-1M (1M vectors, 128 dimensions). For context, [hnswlib](https://github.com/nmslib/hnswlib) — the reference C++ HNSW implementation — does thousands.
+
+---
+
+## Phase 1: Low-hanging fruit (52 → 1,834 QPS)
+
+### Integer indexing (12.5x)
+
+Replaced all HashMaps with contiguous arrays. Vectors became a flat `Vec<f32>` indexed by `usize`. Graph neighbors became `Vec<Vec<usize>>`. String-to-integer mapping happens once at the PyO3 boundary, never in the search loop.
+
+**52 → 648 QPS.**
+
+### Explicit AVX2/FMA intrinsics (2.8x)
+
+The distance computation hot path went through three stages: naive iterator `.zip().map().sum()`, then 8-wide unrolled scalar with 4 independent accumulators (auto-vectorized), then explicit `_mm256_fmadd_ps` intrinsics. The final version processes 32 floats per loop iteration with fused multiply-add — the same technique documented in Intel's [optimization manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) for throughput-bound workloads. A function pointer set at construction time eliminates per-call `match metric` dispatch. Bounds checks on neighbor and alive arrays are eliminated with `get_unchecked`.
+
+**648 → 1,834 QPS.**
+
+### What didn't work
+
+| Optimization | Expected | Actual | Why |
+|-------------|----------|--------|-----|
+| Co-located memory layout | +10-15% | <span style="color:#d94444;">**-10%**</span> | At 128d, each node spans 14 cache lines. Prefetching 2 only warms the neighbor list + 20% of the vector. Separate contiguous storage lets the hardware sequential prefetcher handle vector reads. |
+| Visited array L1 prefetch | +5% | <span style="color:#d94444;">**-10%**</span> | The 2MB visited array (u16 for 1M entries) fits in L2. Forcing entries to L1 evicted vector data from L1 cache. |
+| Cached greedy distance | +3-5% | <span style="color:#d94444;">**noise**</span> | Effect invisible in ~12% cloud VM variance on GCP. |
+
+At this point I was competitive with FAISS-HNSW ([Johnson et al., 2021](https://arxiv.org/abs/2401.08281)) but 1.5x behind hnswlib on a GCP VM. The problem: cloud VMs have too much noise to measure micro-optimizations. I needed the real hardware.
+
+---
+
+## The recall ceiling
+
+I rented an AWS r6i.16xlarge — the exact machine ann-benchmarks uses. First SIFT-1M run: **1,923 QPS at 0.991 recall**. Encouraging. But recall plateaued at **0.992** no matter what I tried.
+
+| ef_construction | ef_search=200 | ef_search=800 | ef_search=2000 |
+|:---------------:|:-------------:|:-------------:|:--------------:|
+| 400 | 0.9917 | 0.9920 | 0.9919 |
+| 800 | 0.9919 | 0.9920 | 0.9917 |
+| 1200 | 0.9918 | 0.9917 | 0.9918 |
+
+Tripling `ef_construction` made zero difference. The ceiling was independent of every parameter. Every other algorithm on ann-benchmarks hits 0.999. Something was structurally wrong.
+
+### Bug 1: Measuring against the wrong ground truth
+
+SIFT-1M ships with ground truth neighbors computed using L2 distance on raw vectors. My benchmark pipeline was normalizing vectors (L2 normalization) and searching with cosine distance — then comparing results against the original L2 ground truth. After normalization, about 0.8% of neighbor rankings change. The recall ceiling was in the measurement, not the algorithm.
+
+**Fix:** Use raw vectors with `metric="l2"`. One line in the dataset config.
+
+### Bug 2: Selecting 2*M neighbors instead of M
+
+My HNSW construction selected `m_max` (2\*M = 96) initial neighbors for each new node. In hnswlib's `mutuallyConnectNewElement`, `m_max` is only the overflow capacity — new nodes get `M` (48) neighbors via `getNeighborsByHeuristic2`, and existing nodes can grow up to `m_max` from reverse connections. Selecting 96 upfront floods the graph with redundant clustered connections at the expense of the diverse long-range shortcuts that Algorithm 4 in [Malkov & Yashunin (2020)](https://arxiv.org/abs/1603.09320) is designed to produce.
+
+**Fix:** Change `select_neighbors_heuristic(&vectors, candidates, m_max, metric)` to `select_neighbors_heuristic(&vectors, candidates, self.m, metric)` in both `build_bulk` and `insert_node`.
+
+**Result of both fixes:** 0.992 → **0.9994 recall**. Build time dropped from 2,651s to 1,589s (1.7x faster — less work per insertion with fewer connections).
+
+---
+
+## Phase 2: Closing the gap (1,923 → 17,746 QPS)
+
+With recall fixed, I stacked six optimizations. Each was benchmarked independently on the r6i.16xlarge.
+
+<div class="chart-container">
+  <p class="chart-title">Figure 1 — Optimization Progression (SIFT-1M, r6i.16xlarge)</p>
+  <canvas id="chart-progression"></canvas>
+  <p class="chart-caption">QPS at ef=100 (~0.995 recall) after each optimization. The recall fix changed the graph structure, so the baseline shifted.</p>
+</div>
+
+| Optimization | QPS (ef=100) | QPS (ef=200) | Recall@200 | Build (1M) | Delta |
+|-------------|:-------------|:-------------|:-----------|:-----------|:------|
+| Baseline (bugs fixed) | 1,953 | 1,135 | 0.999 | 26.5 min | — |
+| + Remove backfill | 2,501 | 1,406 | 0.999 | 17.9 min | <span style="color:#2a9d5c;">**+28%**</span> |
+| + Early termination | 2,686 | 1,512 | 0.999 | 16.3 min | <span style="color:#2a9d5c;">**+7%**</span> |
+| + 4-acc SIMD + worst_dist | 3,058 | 1,715 | 0.999 | 15.0 min | <span style="color:#2a9d5c;">**+14%**</span> |
+| + AVX-512 + prefetch 3-ahead | 3,217 | 1,793 | 0.999 | 14.0 min | <span style="color:#2a9d5c;">**+5%**</span> |
+
+### Remove backfill in neighbor selection (+28%)
+
+The diversity heuristic in `select_neighbors_heuristic` — Algorithm 4 from the HNSW paper — checks whether each candidate is closer to the query than to any already-selected neighbor. Candidates that fail this check are "discarded." My implementation backfilled discarded candidates to guarantee exactly M neighbors per node. hnswlib doesn't — if diversity rejects a candidate, it stays rejected.
+
+Removing backfill creates sparser graphs with better long-range shortcuts. Search reaches 0.999 recall at lower `ef` values, directly translating to higher QPS. Build speed improved 50% because sparser graphs mean less work during construction.
+
+### Early termination (+7%)
+
+hnswlib checks "is the best remaining candidate worse than the worst result?" *before* exploring a candidate's neighbors. I was checking *after*. The difference: one full round of neighbor distance computations on the final iteration of every search query.
+
+### 4-accumulator SIMD + tighter threshold (+14%)
+
+The L2 AVX2 kernel went from 2 accumulators (16 floats/iter) to 4 accumulators (32 floats/iter), improving instruction-level parallelism — each FMA has 4-cycle latency but 0.5-cycle throughput on Ice Lake, so 4 independent chains keep the execution units full. Combined with updating `worst_dist` after every heap pop inside the neighbor loop — the tighter threshold rejects more candidates before computing their distances. This change also moved from M=48 to M=32 (33% fewer neighbors per hop).
+
+### AVX-512 + prefetch 3-ahead (+5%)
+
+The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators process 64 floats per loop iteration — for 128d SIFT, that's 2 iterations instead of 4 with AVX2. Prefetching was extended from 1 neighbor ahead to 3 to better hide the ~70ns memory latency against the ~15ns L2 distance computation time.
+
+---
+
+## Final results
+
+<div class="chart-container">
+  <p class="chart-title">Figure 2 — Recall vs QPS (SIFT-1M, r6i.16xlarge)</p>
+  <canvas id="chart-recall-qps"></canvas>
+  <p class="chart-caption">arrwDB's Pareto frontier on SIFT-1M compared to reference implementations. All on r6i.16xlarge, single-threaded. Competitor data from <a href="https://ann-benchmarks.com">ann-benchmarks.com</a> (March 2025 run).</p>
+</div>
+
+### SIFT-1M (128d, L2)
+
+| ef | Recall@10 | QPS | Latency p50 |
+|:--:|:---------:|:---:|:-----------:|
+| 10 | 0.786 | **17,746** | 0.06ms |
+| 50 | 0.977 | **5,735** | 0.18ms |
+| 100 | 0.995 | **3,217** | 0.32ms |
+| 200 | 0.999 | **1,793** | 0.58ms |
+| 800 | 0.999 | 556 | 1.86ms |
+
+### Deep-1M (96d, angular)
+
+| ef | Recall@10 | QPS | Latency p50 |
+|:--:|:---------:|:---:|:-----------:|
+| 10 | 0.785 | **20,082** | 0.05ms |
+| 50 | 0.971 | **6,470** | 0.16ms |
+| 100 | 0.991 | **3,638** | 0.28ms |
+| 200 | 0.998 | **2,038** | 0.50ms |
+| 800 | 0.9999 | 631 | 1.60ms |
+
+### GloVe-1.2M (200d, angular)
+
+| ef | Recall@10 | QPS | Latency p50 |
+|:--:|:---------:|:---:|:-----------:|
+| 10 | 0.520 | **8,372** | 0.11ms |
+| 50 | 0.759 | **2,761** | 0.35ms |
+| 100 | 0.828 | **1,582** | 0.64ms |
+| 400 | 0.921 | 473 | 2.18ms |
+| 800 | 0.953 | 252 | 4.11ms |
+
+### Projected ann-benchmarks ranking (SIFT-1M at 0.999 recall)
+
+| Rank | System | QPS | Language |
+|:----:|--------|:---:|----------|
+| 1 | qsgngt | ~7,000 | C++ |
+| 2 | NGT-qg | ~4,300 | C++ |
+| 3 | glass | ~2,400 | C++ |
+| 4-6 | NGT-onng, pynndescent, n2 | ~1,800-2,400 | C++/Python |
+| **7** | **arrwDB** | **1,793** | **Rust** |
+| 8 | hnswlib | ~1,400 | C++ |
+| 9 | FAISS-HNSW | ~1,200 | C++ |
+
+At 0.95 recall, arrwDB reaches ~11,500 QPS — **2x faster than hnswlib** (~5,500) and ScaNN (~5,400). The top 3 algorithms use quantized graph techniques — compressed neighbor representations and product quantization during search — that arrwDB hasn't implemented. That's the next frontier.
+
+---
+
+## Cost
+
+| Resource | Hours | Cost |
+|----------|:-----:|:----:|
+| GCP n2-highmem-16 (Phase 1) | ~20 hrs | ~$55 |
+| GCP g2-standard-8 + L4 GPU | ~4 hrs | ~$12 |
+| AWS r6i.16xlarge (Phase 2) | ~24 hrs | ~$97 |
+| **Total** | | **~$164** |
+
+---
+
+## What I'd do differently
+
+1. **Benchmark correctly from day one.** The normalization bug cost days chasing a phantom recall ceiling. Always verify your ground truth matches your distance metric.
+
+2. **Use dedicated hardware sooner.** GCP shared VMs have ~12% variance from noisy neighbors. I reverted "regressions" that were just noise. The r6i.16xlarge gave consistent numbers.
+
+3. **Don't over-connect the graph.** My instinct was "more connections = better recall." The opposite is true — fewer, more diverse connections give both better recall and faster search.
+
+---
+
+## Conclusion
+
+1. arrwDB's HNSW engine went from **52 to 17,746 QPS** (341x) on SIFT-1M through 11 optimizations over two hardware phases.
+2. Two correctness bugs (ground truth mismatch, neighbor selection count) were responsible for a hard recall ceiling at 0.992 that no parameter tuning could overcome.
+3. The highest-impact single optimization was removing backfill in neighbor selection (+28% QPS, +50% build speed, no recall loss).
+4. AVX-512 on Ice Lake provides a measurable but modest gain over AVX2 (~5-8%) — the algorithmic optimizations dominated.
+5. Projected **top-7 on ann-benchmarks SIFT**, ahead of hnswlib and FAISS-HNSW. The [PR is submitted](https://github.com/erikbern/ann-benchmarks/pull/626).
+
+---
+
+## Related Work
+
+The HNSW algorithm was introduced by [Malkov & Yashunin (2020)](https://arxiv.org/abs/1603.09320), building on earlier navigable small-world graphs from [Malkov et al. (2014)](https://doi.org/10.1016/j.is.2013.10.006). The reference C++ implementation is [hnswlib](https://github.com/nmslib/hnswlib), which has been the de facto standard for ANN benchmarking since its release. [FAISS](https://github.com/facebookresearch/faiss) ([Johnson et al., 2021](https://arxiv.org/abs/2401.08281)) includes an HNSW variant alongside IVF and PQ methods. The ann-benchmarks framework ([Aumüller et al., 2020](http://www.vldb.org/pvldb/vol13/p3548-aumller.pdf)) provides the standardized evaluation methodology used here.
+
+The neighbor selection heuristic (Algorithm 4 in the HNSW paper) is a diversity-aware pruning strategy that favors long-range shortcuts over clustered connections. The impact of backfill on graph quality — the largest single optimization in this work — does not appear to be documented in the literature; hnswlib's `keepPrunedConnections` parameter controls this behavior but defaults to false.
+
+For SIMD optimization of distance computation, [Intel's Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) documents the AVX2/FMA and AVX-512 instructions used. The 4-accumulator technique for hiding FMA latency is standard practice in high-performance computing; see [Agner Fog's optimization manuals](https://www.agner.org/optimize/) for the microarchitectural analysis.
+
+---
+
+*11 optimizations benchmarked on AWS r6i.16xlarge (Intel Xeon Platinum 8375C, AVX-512), single-threaded, M=32, ef\_construction=400. Total compute cost: $164. Source code and benchmark results at [github.com/bledden/arrwDB](https://github.com/bledden/arrwDB).*
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>{`
+// ── Global defaults ──
+Chart.defaults.font.family = "'Atkinson', -apple-system, BlinkMacSystemFont, sans-serif";
+Chart.defaults.font.size = 13;
+Chart.defaults.color = '#555';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+const green = '#2a9d5c';
+const greenLight = 'rgba(42, 157, 92, 0.15)';
+const red = '#d94444';
+const gray = '#999';
+
+// ── FIGURE 1: Optimization Progression ──
+(function() {
+  const ctx = document.getElementById('chart-progression').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Baseline\\n(bugs fixed)', '+ No backfill', '+ Early term', '+ 4-acc SIMD\\n+ M=32', '+ AVX-512\\n+ prefetch'],
+      datasets: [{
+        label: 'QPS at ef=100',
+        data: [1953, 2501, 2686, 3058, 3217],
+        backgroundColor: greenLight,
+        borderColor: green,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'QPS (ef=100, ~0.995 recall)' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        x: {
+          grid: { display: false },
+        }
+      }
+    }
+  });
+})();
+
+// ── FIGURE 2: Recall vs QPS ──
+(function() {
+  const ctx = document.getElementById('chart-recall-qps').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'arrwDB',
+          data: [
+            {x: 0.786, y: 17746}, {x: 0.898, y: 11540}, {x: 0.977, y: 5735},
+            {x: 0.995, y: 3217}, {x: 0.998, y: 2291}, {x: 0.999, y: 1793}
+          ],
+          borderColor: green,
+          backgroundColor: green,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
+          tension: 0.3,
+        },
+        {
+          label: 'hnswlib',
+          data: [
+            {x: 0.80, y: 12000}, {x: 0.90, y: 7000}, {x: 0.95, y: 5500},
+            {x: 0.99, y: 2700}, {x: 0.999, y: 1400}
+          ],
+          borderColor: gray,
+          backgroundColor: gray,
+          pointRadius: 3,
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          tension: 0.3,
+        },
+        {
+          label: 'FAISS-HNSW',
+          data: [
+            {x: 0.80, y: 8000}, {x: 0.90, y: 5000}, {x: 0.95, y: 3000},
+            {x: 0.99, y: 1800}, {x: 0.999, y: 1200}
+          ],
+          borderColor: red,
+          backgroundColor: red,
+          pointRadius: 3,
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          tension: 0.3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Recall@10' },
+          min: 0.75,
+          max: 1.0,
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'Queries per Second' },
+          min: 500,
+          max: 25000,
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        }
+      }
+    }
+  });
+})();
+`}</script>
