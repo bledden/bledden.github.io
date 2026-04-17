@@ -1,6 +1,6 @@
 ---
 title: '341x Faster: Optimizing a Rust Vector Database to Top-7 on ANN-Benchmarks'
-description: 'From 52 QPS to 17,746 QPS on SIFT-1M through 11 optimizations, two bug fixes, and one measurement error. Projected top-7 on ann-benchmarks, highest-ranked Rust HNSW implementation.'
+description: 'From 52 QPS to 17,746 QPS on SIFT-1M through ten optimizations, two bug fixes, and one measurement error. Projected top-7 on ann-benchmarks at 0.999 recall.'
 pubDate: 2026-04-16
 heroImage: '../../assets/arrwdb-optimization-hero.png'
 ---
@@ -34,7 +34,7 @@ heroImage: '../../assets/arrwdb-optimization-hero.png'
   }
 `}</style>
 
-I built a vector database in Rust with a Python API and benchmarked its HNSW search engine against every implementation on [ann-benchmarks.com](https://ann-benchmarks.com). It started at 52 queries per second on SIFT-1M — the standard benchmark dataset from [Aumüller et al. (2020)](http://www.vldb.org/pvldb/vol13/p3548-aumller.pdf). After 11 optimizations, two bug fixes, and one embarrassing measurement error, it does **17,746 QPS** — projected **top-7 on the ann-benchmarks SIFT leaderboard** and the highest-ranked pure Rust implementation.
+I built a vector database in Rust with a Python API and benchmarked its HNSW search engine against every implementation on [ann-benchmarks.com](https://ann-benchmarks.com). It started at 52 queries per second on SIFT-1M — the standard benchmark dataset from [Aumüller et al. (2020)](http://www.vldb.org/pvldb/vol13/p3548-aumller.pdf). After ten optimizations, two bug fixes, and one embarrassing measurement error, it does **17,746 QPS** — projected **top-7 on the ann-benchmarks SIFT leaderboard at 0.999 recall** and the highest-ranked Rust HNSW implementation in that regime.
 
 **The full progression:**
 
@@ -76,8 +76,8 @@ The distance computation hot path went through three stages: naive iterator `.zi
 
 | Optimization | Expected | Actual | Why |
 |-------------|----------|--------|-----|
-| Co-located memory layout | +10-15% | <span style="color:#d94444;">**-10%**</span> | At 128d, each node spans 14 cache lines. Prefetching 2 only warms the neighbor list + 20% of the vector. Separate contiguous storage lets the hardware sequential prefetcher handle vector reads. |
-| Visited array L1 prefetch | +5% | <span style="color:#d94444;">**-10%**</span> | The 2MB visited array (u16 for 1M entries) fits in L2. Forcing entries to L1 evicted vector data from L1 cache. |
+| Co-located memory layout | +10-15% | <span style="color:#d94444;">**-10%**</span> | hnswlib's co-located layout works because their node stride is a compile-time constant via C++ templates — the compiler folds address arithmetic and specializes memory access per dimension. My Rust version had a runtime stride, so every address calculation was dynamic. The overhead of indexed access through a runtime-sized block swamped the locality benefit. The fix requires const-generic dimension specialization, which I haven't implemented. |
+| Visited array L1 prefetch | +5% | <span style="color:#d94444;">**-10%**</span> | The 2MB visited array (u16 for 1M entries) fits in L2 comfortably. Issuing software prefetches for every neighbor's visited entry added L1 pressure that evicted more-valuable vector data, without providing a measurable latency win over the natural L2 hit path. |
 | Cached greedy distance | +3-5% | <span style="color:#d94444;">**noise**</span> | Effect invisible in ~12% cloud VM variance on GCP. |
 
 At this point I was competitive with FAISS-HNSW ([Johnson et al., 2021](https://arxiv.org/abs/2401.08281)) but 1.5x behind hnswlib on a GCP VM. The problem: cloud VMs have too much noise to measure micro-optimizations. I needed the real hardware.
@@ -98,13 +98,13 @@ Tripling `ef_construction` made zero difference. The ceiling was independent of 
 
 ### Bug 1: Measuring against the wrong ground truth
 
-SIFT-1M ships with ground truth neighbors computed using L2 distance on raw vectors. My benchmark pipeline was normalizing vectors (L2 normalization) and searching with cosine distance — then comparing results against the original L2 ground truth. After normalization, about 0.8% of neighbor rankings change. The recall ceiling was in the measurement, not the algorithm.
+SIFT-1M ships with ground truth neighbors computed using L2 distance on raw vectors. My benchmark pipeline was normalizing vectors (L2 normalization) and searching with cosine distance — then comparing results against the original L2 ground truth. The observed ceiling of 0.992 suggests roughly 0.8% of neighbor rankings change under the L2→cosine transformation on this distribution — a shift I inferred from the ceiling rather than measured directly. The recall gap was in the measurement, not the algorithm.
 
 **Fix:** Use raw vectors with `metric="l2"`. One line in the dataset config.
 
 ### Bug 2: Selecting 2*M neighbors instead of M
 
-My HNSW construction selected `m_max` (2\*M = 96) initial neighbors for each new node. In hnswlib's `mutuallyConnectNewElement`, `m_max` is only the overflow capacity — new nodes get `M` (48) neighbors via `getNeighborsByHeuristic2`, and existing nodes can grow up to `m_max` from reverse connections. Selecting 96 upfront floods the graph with redundant clustered connections at the expense of the diverse long-range shortcuts that Algorithm 4 in [Malkov & Yashunin (2020)](https://arxiv.org/abs/1603.09320) is designed to produce.
+My HNSW construction selected `m_max` (2\*M = 96) initial neighbors for each new node. In hnswlib's `mutuallyConnectNewElement`, `m_max` is only the overflow capacity — new nodes get `M` (48) neighbors via `getNeighborsByHeuristic2`, and existing nodes can grow up to `m_max` from reverse connections. Selecting 96 upfront means the diversity heuristic has twice as many slots to fill before it starts rejecting candidates, which in principle dilutes the long-range shortcuts that Algorithm 4 in [Malkov & Yashunin (2020)](https://arxiv.org/abs/1603.09320) is designed to produce. I didn't directly measure the resulting graph structure — this is the theoretical mechanism for the observed recall improvement.
 
 **Fix:** Change `select_neighbors_heuristic(&vectors, candidates, m_max, metric)` to `select_neighbors_heuristic(&vectors, candidates, self.m, metric)` in both `build_bulk` and `insert_node`.
 
@@ -142,11 +142,11 @@ hnswlib checks "is the best remaining candidate worse than the worst result?" *b
 
 ### 4-accumulator SIMD + tighter threshold (+14%)
 
-The L2 AVX2 kernel went from 2 accumulators (16 floats/iter) to 4 accumulators (32 floats/iter), improving instruction-level parallelism — each FMA has 4-cycle latency but 0.5-cycle throughput on Ice Lake, so 4 independent chains keep the execution units full. Combined with updating `worst_dist` after every heap pop inside the neighbor loop — the tighter threshold rejects more candidates before computing their distances. This change also moved from M=48 to M=32 (33% fewer neighbors per hop).
+The L2 AVX2 kernel went from 2 accumulators (16 floats/iter) to 4 accumulators (32 floats/iter), improving instruction-level parallelism. Ice Lake Server has two FMA units at 0.5 cycles/op throughput and 4-cycle latency — fully saturating both ports would require 8 independent dependency chains, so 4 accumulators is a middle ground. Combined with updating `worst_dist` after every heap pop inside the neighbor loop — the tighter threshold rejects more candidates before computing their distances. This change also moved from M=48 to M=32 (33% fewer neighbors per hop).
 
 ### AVX-512 + prefetch 3-ahead (+5%)
 
-The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators process 64 floats per loop iteration — for 128d SIFT, that's 2 iterations instead of 4 with AVX2. Prefetching was extended from 1 neighbor ahead to 3 to better hide the ~70ns memory latency against the ~15ns L2 distance computation time.
+The r6i.16xlarge has Intel Ice Lake with AVX-512. Four 512-bit accumulators process 64 floats per loop iteration — for 128d SIFT, that's 2 iterations instead of 4 with AVX2. The prefetch depth is empirical: 3-ahead was best, with 5-ahead regressing slightly (likely from fill-buffer contention). The theoretical ratio of DRAM latency to distance-computation time suggests deeper prefetch should help, but in practice the processor's own memory-level parallelism handles most of the latency hiding.
 
 ---
 
@@ -229,11 +229,35 @@ Competitor QPS values are interpolated from published ann-benchmarks results on 
 
 ## Conclusion
 
-1. arrwDB's HNSW engine went from **52 to 17,746 QPS** (341x) on SIFT-1M through 11 optimizations over two hardware phases.
+1. arrwDB's HNSW engine went from **52 to 17,746 QPS** (341x at the ef=10 operating point, 62x at matched 0.995 recall) on SIFT-1M through ten optimizations over two hardware phases.
 2. Two correctness bugs (ground truth mismatch, neighbor selection count) were responsible for a hard recall ceiling at 0.992 that no parameter tuning could overcome.
 3. The highest-impact single optimization was removing backfill in neighbor selection (+28% QPS, +50% build speed, no recall loss).
 4. AVX-512 on Ice Lake provides a measurable but modest gain over AVX2 (~5-8%) — the algorithmic optimizations dominated.
 5. Projected **top-7 on ann-benchmarks SIFT**, ahead of hnswlib and FAISS-HNSW. The [PR is submitted](https://github.com/erikbern/ann-benchmarks/pull/626).
+
+---
+
+## Addendum: Post-publication corrections (2026-04-17)
+
+An expert review after publication surfaced several technical inaccuracies and overclaims. The post has been updated in place; this section documents the changes so readers who saw the original have a clear diff.
+
+**1. Co-located memory layout explanation was wrong.** The original post attributed the regression to cache-line count and claimed the "hardware sequential prefetcher" handled vector reads in the non-colocated path. That's incorrect. HNSW traversal is graph-based (random access between neighbors), so the sequential prefetcher does not help across distance calls. The actual reason hnswlib's co-located layout wins is that its node stride is a compile-time constant via C++ templates, allowing the compiler to fold address arithmetic and specialize per-dimension. The Rust version had a runtime stride, so every address calculation was dynamic, and that overhead swamped the locality benefit. The "What didn't work" table has been updated.
+
+**2. FMA saturation analysis understated the hardware.** The original claimed 4 accumulators "keep the execution units full" on Ice Lake. Ice Lake Server has two FMA units at 0.5 cycles/op throughput and 4-cycle latency, which requires 8 independent dependency chains to fully saturate — not 4. Four accumulators is a middle ground, not an optimum. The SIMD section has been updated; unrolling to 8 accumulators is likely worth 3–5% and remains on the to-do list.
+
+**3. Prefetch-depth rationale was presented as principled but was empirical.** The ratio of DRAM latency (~70–100ns) to distance time (~15ns) suggests ~5-ahead should be optimal, but 3-ahead measured fastest with 5-ahead regressing slightly (likely fill-buffer contention). The post now presents this as an empirical finding.
+
+**4. "0.8% of neighbor rankings change" was back-calculated, not measured.** The number was inferred from the 0.992 recall ceiling rather than computed by diffing L2 and cosine ground truths directly. The post now labels it as inference.
+
+**5. "Floods the graph with redundant clustered connections" was asserted, not demonstrated.** The mechanism by which `m_max`-instead-of-`M` neighbor selection hurts graph quality is theoretically sound, but I did not measure graph-structural properties (average path length, clustering coefficient) before and after the fix. The post now frames this as the expected mechanism rather than a measured effect.
+
+**6. Methodology was underspecified.** Each configuration was run once; the numbers are single observations, not averages over multiple runs. Repeat sweeps of the same configuration on r6i.16xlarge showed <2% run-to-run variance, but that's an informal stability check rather than a statistical treatment. Error bars would require multiple runs per data point and were not included.
+
+**7. "Highest-ranked pure Rust" needed scope.** The claim holds at 0.999 recall on SIFT-1M; at lower recall or on other datasets, rankings shift. The intro now specifies the regime.
+
+**8. Optimization count was imprecise.** The original said "11 optimizations"; the actual enumerated count is closer to 10 (2 in Phase 1, 2 bug fixes, 6 in Phase 2). The post now uses "ten."
+
+Nothing in the headline results changed — SIFT-1M numbers, ranking position, and the recall ceiling debugging story are all unaffected by these corrections. What changed is how confidently each claim is framed.
 
 ---
 
@@ -247,7 +271,7 @@ For SIMD optimization of distance computation, [Intel's Intrinsics Guide](https:
 
 ---
 
-*11 optimizations benchmarked on AWS r6i.16xlarge (Intel Xeon Platinum 8375C, AVX-512), single-threaded, M=32, ef\_construction=400. Total compute cost: $164. Source code and benchmark results at [github.com/bledden/arrwDB](https://github.com/bledden/arrwDB).*
+*Ten optimizations benchmarked on AWS r6i.16xlarge (Intel Xeon Platinum 8375C, AVX-512), single-threaded, M=32, ef\_construction=400, each config single-run with <2% repeat variance. Total compute cost: $164. Source code and benchmark results at [github.com/bledden/arrwDB](https://github.com/bledden/arrwDB). Post-publication corrections on 2026-04-17 — see addendum.*
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>{`
