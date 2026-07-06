@@ -10,13 +10,14 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 // Explicit ordering by quality ranking
 const postOrder = [
 	'arrwdb-optimization',       // 1st - 341x optimization, top-7 ann-benchmarks
-	'noisy-student',             // 2nd - 4 experiments, consensus self-training finding
-	'context-distillation',      // 3rd - novel distribution cliff finding
-	'open-character-training',   // 4th - strong replication
-	'memorization-study',        // 5th - clean theory validation
-	'cai-base-model',            // 6th - pipeline works, data scale issue
-	'gan-joke-generation',       // 7th - honest failure analysis
-	'cross-project-meta-analysis', // 8th - synthesis piece
+	'recall',                    // 2nd - cross-session memory plugin, systems + measured cost
+	'noisy-student',             // 3rd - 4 experiments, consensus self-training finding
+	'context-distillation',      // 4th - novel distribution cliff finding
+	'open-character-training',   // 5th - strong replication
+	'memorization-study',        // 6th - clean theory validation
+	'cai-base-model',            // 7th - pipeline works, data scale issue
+	'gan-joke-generation',       // 8th - honest failure analysis
+	'cross-project-meta-analysis', // 9th - synthesis piece
 ];
 
 const allPosts = await getCollection('blog');
