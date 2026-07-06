@@ -1,7 +1,7 @@
 ---
 title: 'A Memory Tool for 1% of Your Budget: How Recall Works, and Why I Rely on It'
 description: 'A local, cross-session memory plugin for Claude Code and Cowork. How it works from the system up, and the measured answer to what it costs: about 1% of my token budget across 470,000 requests on three machines.'
-pubDate: 2026-07-02
+pubDate: 2026-07-05
 heroImage: '../../assets/recall-hero.png'
 ---
 
