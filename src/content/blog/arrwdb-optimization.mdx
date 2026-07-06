@@ -251,7 +251,7 @@ An expert review after publication surfaced several technical inaccuracies and o
 
 **5. "Floods the graph with redundant clustered connections" was asserted, not demonstrated.** The mechanism by which `m_max`-instead-of-`M` neighbor selection hurts graph quality is theoretically sound, but I did not measure graph-structural properties (average path length, clustering coefficient) before and after the fix. The post now frames this as the expected mechanism rather than a measured effect.
 
-**6. Methodology was underspecified.** Each configuration was run once; the numbers are single observations, not averages over multiple runs. Repeat sweeps of the same configuration on r6i.16xlarge showed <2% run-to-run variance, but that's an informal stability check rather than a statistical treatment. Error bars would require multiple runs per data point and were not included.
+**6. Methodology was underspecified.** Each configuration was run once; the numbers are single observations, not averages over multiple runs. Repeat sweeps of the same configuration on r6i.16xlarge showed &lt;2% run-to-run variance, but that's an informal stability check rather than a statistical treatment. Error bars would require multiple runs per data point and were not included.
 
 **7. "Highest-ranked pure Rust" needed scope.** The claim holds at 0.999 recall on SIFT-1M; at lower recall or on other datasets, rankings shift. The intro now specifies the regime.
 
@@ -271,7 +271,7 @@ For SIMD optimization of distance computation, [Intel's Intrinsics Guide](https:
 
 ---
 
-*Ten optimizations benchmarked on AWS r6i.16xlarge (Intel Xeon Platinum 8375C, AVX-512), single-threaded, M=32, ef\_construction=400, each config single-run with <2% repeat variance. Total compute cost: $164. Source code and benchmark results at [github.com/bledden/arrwDB](https://github.com/bledden/arrwDB). Post-publication corrections on 2026-04-17 — see addendum.*
+*Ten optimizations benchmarked on AWS r6i.16xlarge (Intel Xeon Platinum 8375C, AVX-512), single-threaded, M=32, ef\_construction=400, each config single-run with &lt;2% repeat variance. Total compute cost: $164. Source code and benchmark results at [github.com/bledden/arrwDB](https://github.com/bledden/arrwDB). Post-publication corrections on 2026-04-17 — see addendum.*
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>{`
