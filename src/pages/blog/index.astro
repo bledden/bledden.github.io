@@ -9,7 +9,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import ptxHero from '../../assets/getpoppy-ptx-hero.png';
 import upstreamingHero from '../../assets/getpoppy-upstreaming-hero.png';
 
-// Explicit ordering by quality ranking
+// Which local posts to show (the collection may hold drafts not listed here).
+// The grid is date-sorted below, so this list's order does not matter.
 const postOrder = [
 	'triton-msl',                // 1st - Triton Metal backend, verified byte-identical portability
 	'recall',                    // 2nd - cross-session memory plugin, systems + measured cost
@@ -54,8 +55,11 @@ const externalCards = [
 	},
 ];
 
-// Featured (first) local post stays first; the two mirror cards follow it.
-const cards = [localCards[0], ...externalCards, ...localCards.slice(1)];
+// Order the whole grid (local posts + mirrors) by date, newest first. The
+// newest post becomes the full-width featured card.
+const cards = [...localCards, ...externalCards].sort(
+	(a, b) => b.pubDate.getTime() - a.pubDate.getTime()
+);
 ---
 
 <!doctype html>
