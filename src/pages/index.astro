@@ -15,48 +15,78 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 		<main>
 			<h1>Blake Ledden</h1>
 			<p>
-				I run experiments on LLM training dynamics and write about what I find. Currently focused on
-				distillation, constitutional training, and reinforcement learning — with an emphasis on
-				statistical rigor (10-seed validation, effect sizes, confidence intervals).
+				I write GPU kernels and run research experiments, and I publish what I find — including what
+				didn't work. Current threads: quantum error correction decoders, portable GPU kernels
+				(CUDA / ROCm / Metal), and LLM training dynamics — with an emphasis on statistical rigor
+				(multi-seed validation, effect sizes, confidence intervals, paired tests).
 			</p>
 
-			<h2>Recent Research</h2>
+			<h2>Quantum Error Correction</h2>
+			<ul>
+				<li>
+					<strong><a href="https://github.com/bledden/pathfinder">Pathfinder: Direction-Aware Neural Decoding and Complementary-Failure Ensembles for Surface Codes</a></strong> —
+					a 57-page preprint. A single fixed-checkpoint CNN decoder is never statistically beaten by
+					PyMatching across 24 evaluated configurations under circuit-level noise, and its ensemble
+					beats a fine-tuned three-seed ensemble of the prior open-source GNN decoder under paired
+					McNemar tests. Six negative results documented rather than buried. Code, checkpoints, and
+					raw evaluation data in the repo.
+				</li>
+				<li>
+					<strong><a href="https://github.com/bledden/tridec">tridec</a></strong> —
+					vendor-portable GPU decoders for quantum LDPC codes: the same Triton kernel source runs on
+					NVIDIA (CUDA), AMD (ROCm), and Apple silicon (Metal), validated on all three.
+					<a href="https://pypi.org/project/tridec/">On PyPI</a>.
+				</li>
+			</ul>
+
+			<h2>GPU Kernels &amp; Consumer Blackwell</h2>
 			<p>
-				I recently completed a series of experiments on the <a href="https://thinkingmachines.ai/tinker/">Tinker platform</a>,
-				testing proposals from the <a href="https://github.com/thinking-machines-lab/tinker-project-ideas">Thinking Machines Lab</a>.
-				Key findings:
+				Written up on the <a href="https://getpoppy.app/blog/">Second Nature Computing blog</a>:
 			</p>
 			<ul>
 				<li>
-					<strong><a href="/blog/noisy-student">Noisy Student for LLMs</a></strong> —
-					Token noise fails (p=0.0018). Consensus pseudo-labeling with RLVR produces +3.9pp on GSM8K
-					(p=0.002, N=7 seeds). Discovered a bootstrap capability threshold for self-training.
+					<strong><a href="https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell">Four Months Upstreaming Consumer Blackwell</a></strong> —
+					enabling SM120/SM121 across flash-attention, FlashInfer, vLLM, CUTLASS, Triton, and SGLang;
+					merged forward/backward/varlen attention kernels and the dispatch fixes underneath them.
 				</li>
 				<li>
-					<strong><a href="/blog/context-distillation">The Distribution Cliff</a></strong> —
-					Hybrid distillation (off-policy → on-policy) catastrophically fails with capability gaps.
-					160 runs across Qwen and Llama families. The GKD paper's recommendation doesn't generalize.
-				</li>
-				<li>
-					<strong><a href="/blog/open-character-training">Open Character Training</a></strong> —
-					Constitutional DPO improves character alignment +39%, reduces adversarial break rate from 65% to 35%.
-					Prompt distillation works (84% success without system prompts). 47 runs, 5 personas.
-				</li>
-				<li>
-					<strong><a href="/blog/memorization-study">SL vs RL Efficiency</a></strong> —
-					Empirically validated "LoRA without regret" theory. Supervised learning converges in 2 episodes
-					regardless of problem size. RL scales as n^0.89. Effect size: g = -8.2.
+					<strong><a href="https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell">Writing PTX for Consumer Blackwell</a></strong> —
+					280 hand-written PTX kernels; FP8 flash attention from 30 to 108 TFLOPS via a transposed-V
+					layout — and the honest counterpart: where hand-written PTX loses to the compiler.
 				</li>
 			</ul>
+			<p>And on this site:</p>
+			<ul>
+				<li>
+					<strong><a href="/blog/triton-msl">Same Source, Same Bytes</a></strong> —
+					a Metal backend for OpenAI Triton with a correct-or-refuse contract: the same
+					<code>@triton.jit</code> source, verified byte-identical against NVIDIA.
+				</li>
+				<li>
+					<strong><a href="/blog/arrwdb-optimization">341× Faster</a></strong> —
+					optimizing a Rust vector database to top-7 on ANN-Benchmarks.
+				</li>
+			</ul>
+
+			<h2>LLM Training Dynamics</h2>
+			<p>
+				A series of experiments on the <a href="https://thinkingmachines.ai/tinker/">Tinker platform</a>:
+				<a href="/blog/noisy-student">Noisy Student for LLMs</a>,
+				<a href="/blog/context-distillation">The Distribution Cliff</a>,
+				<a href="/blog/open-character-training">Open Character Training</a>, and
+				<a href="/blog/memorization-study">SL vs RL Efficiency</a> — synthesized in
+				<a href="/blog/cross-project-meta-analysis">Seven Patterns from 300+ ML Evaluation Runs</a>.
+			</p>
 			<p>
 				<a href="/blog">See all posts →</a>
 			</p>
 
-			<h2>Facilitair</h2>
+			<h2>Now</h2>
 			<p>
-				I'm also founder at <strong>Facilitair.ai</strong>, building AI orchestration systems.
-				Trained 20+ model versions (44.7M-5.75B params) achieving 90%+ routing accuracy with &lt;100ms latency.
-				The system predicts execution strategy, task domain, required capabilities, and optimal model simultaneously.
+				Day to day I'm the founding AI engineer at <strong>Second Nature Computing</strong>, building
+				<a href="https://getpoppy.app">Poppy</a> — a proactive assistant that surfaces the right thing
+				at the right time across your calendar, mail, and messages. I'm also founder at
+				<strong>Facilitair.ai</strong>, building AI orchestration systems.
 			</p>
 
 			<h2>Background</h2>
@@ -69,6 +99,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 			<ul>
 				<li><a href="https://github.com/bledden">GitHub</a></li>
 				<li><a href="https://linkedin.com/in/blakeledden">LinkedIn</a></li>
+				<li><a href="https://getpoppy.app/blog/">Second Nature blog</a></li>
 				<li><a href="mailto:blake.ledden@gmail.com">blake.ledden@gmail.com</a></li>
 			</ul>
 		</main>
