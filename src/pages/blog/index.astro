@@ -9,15 +9,16 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 // Explicit ordering by quality ranking
 const postOrder = [
-	'recall',                    // 1st - cross-session memory plugin, systems + measured cost
-	'arrwdb-optimization',       // 2nd - 341x optimization, top-7 ann-benchmarks
-	'noisy-student',             // 3rd - 4 experiments, consensus self-training finding
-	'context-distillation',      // 4th - novel distribution cliff finding
-	'open-character-training',   // 5th - strong replication
-	'memorization-study',        // 6th - clean theory validation
-	'cai-base-model',            // 7th - pipeline works, data scale issue
-	'gan-joke-generation',       // 8th - honest failure analysis
-	'cross-project-meta-analysis', // 9th - synthesis piece
+	'triton-msl',                // 1st - Triton Metal backend, verified byte-identical portability
+	'recall',                    // 2nd - cross-session memory plugin, systems + measured cost
+	'arrwdb-optimization',       // 3rd - 341x optimization, top-7 ann-benchmarks
+	'noisy-student',             // 4th - 4 experiments, consensus self-training finding
+	'context-distillation',      // 5th - novel distribution cliff finding
+	'open-character-training',   // 6th - strong replication
+	'memorization-study',        // 7th - clean theory validation
+	'cai-base-model',            // 8th - pipeline works, data scale issue
+	'gan-joke-generation',       // 9th - honest failure analysis
+	'cross-project-meta-analysis', // 10th - synthesis piece
 ];
 
 const allPosts = await getCollection('blog');
