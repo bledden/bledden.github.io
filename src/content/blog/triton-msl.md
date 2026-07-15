@@ -173,4 +173,4 @@ One caveat up front: Triton publishes no macOS wheel, so on a Mac you build it f
 
 The repo, the full portability receipt with its reproduce harness, and the correctness campaign in detail: [github.com/bledden/triton-msl](https://github.com/bledden/triton-msl).
 
-If you write Triton and own a Mac, the most useful thing you could do is try to make it silently return a wrong number. By the contract, it shouldn't be able to. If it does, that's the bug report I most want.
+If you write Triton and own a Mac, give it a try, and if you can make it silently return a wrong number, I'd want to know. It's built not to, but it's alpha, and that's the failure mode I care about most.
