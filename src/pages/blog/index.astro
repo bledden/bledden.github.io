@@ -6,6 +6,8 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import ptxHero from '../../assets/getpoppy-ptx-hero.png';
+import upstreamingHero from '../../assets/getpoppy-upstreaming-hero.png';
 
 // Explicit ordering by quality ranking
 const postOrder = [
@@ -22,9 +24,38 @@ const postOrder = [
 ];
 
 const allPosts = await getCollection('blog');
-const posts = postOrder
+const localCards = postOrder
 	.map(id => allPosts.find(p => p.id === id))
-	.filter(Boolean);
+	.filter(Boolean)
+	.map(p => ({
+		title: p.data.title,
+		pubDate: p.data.pubDate,
+		heroImage: p.data.heroImage,
+		href: `/blog/${p.id}/`,
+		external: false,
+	}));
+
+// Mirror cards for the Second Nature (getpoppy.app) posts: hero, headline, date.
+// Clicking opens the original post there; the content is not cloned locally.
+const externalCards = [
+	{
+		title: 'Writing PTX for Consumer Blackwell',
+		pubDate: new Date('2026-07-08T12:00:00Z'),
+		heroImage: ptxHero,
+		href: 'https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell',
+		external: true,
+	},
+	{
+		title: 'Four Months Upstreaming Consumer Blackwell',
+		pubDate: new Date('2026-06-22T12:00:00Z'),
+		heroImage: upstreamingHero,
+		href: 'https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell',
+		external: true,
+	},
+];
+
+// Featured (first) local post stays first; the two mirror cards follow it.
+const cards = [localCards[0], ...externalCards, ...localCards.slice(1)];
 ---
 
 <!doctype html>
@@ -112,15 +143,20 @@ const posts = postOrder
 			<section>
 				<ul>
 					{
-						posts.map((post) => (
+						cards.map((card) => (
 							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
+								<a
+									href={card.href}
+									target={card.external ? '_blank' : undefined}
+									rel={card.external ? 'noopener' : undefined}
+								>
+									{card.heroImage && (
+										<Image width={720} height={360} src={card.heroImage} alt="" />
 									)}
-									<h4 class="title">{post.data.title}</h4>
+									<h4 class="title">{card.title}</h4>
 									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
+										<FormattedDate date={card.pubDate} />
+										{card.external && <span class="ext"> · Second Nature blog ↗</span>}
 									</p>
 								</a>
 							</li>
