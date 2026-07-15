@@ -14,86 +14,68 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 		<Header />
 		<main>
 			<h1>Blake Ledden</h1>
+			<p style="font-size: 1.2em;">
+				AI engineer with a focus on systems who owns the stack end-to-end, from the GPU kernel to the eval.
+			</p>
 			<p>
-				I write GPU kernels and run research experiments, and I publish what I find — including what
-				didn't work. Current threads: quantum error correction decoders, portable GPU kernels
-				(CUDA / ROCm / Metal), and LLM training dynamics — with an emphasis on statistical rigor
-				(multi-seed validation, effect sizes, confidence intervals, paired tests).
+				Day to day: GPU kernels and compiler backends (CUDA / ROCm / Metal), inference servers,
+				multi-model orchestration, model training and fine-tuning, and evals. I publish what I
+				measure, including what didn't work.
 			</p>
 
-			<h2>Quantum Error Correction</h2>
+			<h2>GPU Kernels &amp; Compilers</h2>
 			<ul>
 				<li>
-					<strong><a href="https://github.com/bledden/pathfinder">Pathfinder: Direction-Aware Neural Decoding and Complementary-Failure Ensembles for Surface Codes</a></strong> —
-					a 57-page preprint. A single fixed-checkpoint CNN decoder is never statistically beaten by
-					PyMatching across 24 evaluated configurations under circuit-level noise, and its ensemble
-					beats a fine-tuned three-seed ensemble of the prior open-source GNN decoder under paired
-					McNemar tests. Six negative results documented rather than buried. Code, checkpoints, and
-					raw evaluation data in the repo.
+					<strong><a href="https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell">Writing PTX for Consumer Blackwell</a></strong>.
+					280 hand-written PTX kernels. FP8 flash attention from 30 to 108 TFLOPS via a
+					transposed-V layout, and where hand-written PTX loses to the compiler.
 				</li>
 				<li>
-					<strong><a href="https://github.com/bledden/tridec">tridec</a></strong> —
-					vendor-portable GPU decoders for quantum LDPC codes: the same Triton kernel source runs on
-					NVIDIA (CUDA), AMD (ROCm), and Apple silicon (Metal), validated on all three.
-					<a href="https://pypi.org/project/tridec/">On PyPI</a>.
-				</li>
-			</ul>
-
-			<h2>GPU Kernels &amp; Consumer Blackwell</h2>
-			<p>
-				Written up on the <a href="https://getpoppy.app/blog/">Second Nature Computing blog</a>:
-			</p>
-			<ul>
-				<li>
-					<strong><a href="https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell">Four Months Upstreaming Consumer Blackwell</a></strong> —
-					enabling SM120/SM121 across flash-attention, FlashInfer, vLLM, CUTLASS, Triton, and SGLang;
-					merged forward/backward/varlen attention kernels and the dispatch fixes underneath them.
+					<strong><a href="https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell">Four Months Upstreaming Consumer Blackwell</a></strong>.
+					SM120/SM121 enabled across flash-attention, FlashInfer, vLLM, CUTLASS, Triton, and
+					SGLang, with merged forward/backward/varlen attention kernels and the dispatch fixes under them.
 				</li>
 				<li>
-					<strong><a href="https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell">Writing PTX for Consumer Blackwell</a></strong> —
-					280 hand-written PTX kernels; FP8 flash attention from 30 to 108 TFLOPS via a transposed-V
-					layout — and the honest counterpart: where hand-written PTX loses to the compiler.
-				</li>
-			</ul>
-			<p>And on this site:</p>
-			<ul>
-				<li>
-					<strong><a href="/blog/triton-msl">Same Source, Same Bytes</a></strong> —
-					a Metal backend for OpenAI Triton with a correct-or-refuse contract: the same
+					<strong><a href="/blog/triton-msl">Same Source, Same Bytes</a></strong>.
+					A Metal backend for OpenAI Triton with a correct-or-refuse contract. The same
 					<code>@triton.jit</code> source, verified byte-identical against NVIDIA.
 				</li>
 				<li>
-					<strong><a href="/blog/arrwdb-optimization">341× Faster</a></strong> —
-					optimizing a Rust vector database to top-7 on ANN-Benchmarks.
+					<strong><a href="https://github.com/bledden/tridec">tridec</a></strong>.
+					One Triton kernel source for quantum-LDPC decoders, validated on NVIDIA (CUDA),
+					AMD (ROCm), and Apple silicon (Metal). <a href="https://pypi.org/project/tridec/">On PyPI</a>.
+				</li>
+				<li>
+					<strong><a href="/blog/arrwdb-optimization">341× Faster</a></strong>.
+					Optimizing a Rust vector database from 52 to 17,746 QPS, top-7 on ANN-Benchmarks at 0.999 recall.
 				</li>
 			</ul>
 
 			<h2>LLM Training Dynamics</h2>
 			<p>
-				A series of experiments on the <a href="https://thinkingmachines.ai/tinker/">Tinker platform</a>:
-				<a href="/blog/noisy-student">Noisy Student for LLMs</a>,
-				<a href="/blog/context-distillation">The Distribution Cliff</a>,
-				<a href="/blog/open-character-training">Open Character Training</a>, and
-				<a href="/blog/memorization-study">SL vs RL Efficiency</a> — synthesized in
-				<a href="/blog/cross-project-meta-analysis">Seven Patterns from 300+ ML Evaluation Runs</a>.
-			</p>
-			<p>
-				<a href="/blog">See all posts →</a>
+				A series of multi-seed experiments on the <a href="https://thinkingmachines.ai/tinker/">Tinker platform</a>:
+				<a href="/blog/noisy-student">Noisy Student for LLMs</a> (consensus self-training, +3.9pp GSM8K),
+				<a href="/blog/context-distillation">The Distribution Cliff</a> (off-policy distillation collapse),
+				<a href="/blog/open-character-training">Open Character Training</a> (+39% alignment),
+				<a href="/blog/memorization-study">SL vs RL efficiency</a> (an information-theoretic gap, validated),
+				<a href="/blog/cai-base-model">Constitutional AI from base models</a>, and
+				<a href="/blog/gan-joke-generation">GAN-style joke training</a> (when metrics lie),
+				all synthesized in <a href="/blog/cross-project-meta-analysis">Seven Patterns from 300+ Evaluation Runs</a>.
 			</p>
 
-			<h2>Now</h2>
-			<p>
-				Day to day I'm the founding AI engineer at <strong>Second Nature Computing</strong>, building
-				<a href="https://getpoppy.app">Poppy</a> — a proactive assistant that surfaces the right thing
-				at the right time across your calendar, mail, and messages. I'm also founder at
-				<strong>Facilitair.ai</strong>, building AI orchestration systems.
-			</p>
+			<h2>Tools</h2>
+			<ul>
+				<li>
+					<strong><a href="/blog/recall">Recall</a></strong>.
+					A local, cross-session memory plugin for Claude Code, measured at about 1% of my
+					token budget across 470,000 requests.
+				</li>
+			</ul>
+
+			<p><a href="/blog">See all posts →</a></p>
 
 			<h2>Background</h2>
-			<p>
-				Previously 4+ years at Apple on authentication and developer tooling. Before that,
-				I gravitated towards opportunities in startups and IT roles where I kept finding problems that could be automated.
-			</p>
+			<p>Previously 4+ years at Apple on authentication and developer tooling.</p>
 
 			<h2>Links</h2>
 			<ul>
