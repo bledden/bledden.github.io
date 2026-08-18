@@ -1,5 +1,5 @@
 ---
-title: "An Update to triton-msl: Part-1 Clarifications, Attention That Beats PyTorch, Quantized Inference, and AMD"
+title: "An update to triton-msl: Attention That Beats PyTorch, Quantized Inference, and AMD"
 description: "Part 2 of the Metal backend for Triton. A dispatch fix makes FlashAttention beat PyTorch and hold its own against Apple's MLX, weight-only int8/int4 decode hits the memory roofline, byte-identical output extends to a third vendor (AMD), and macOS 26 cost zero codegen changes."
 pubDate: 2026-08-18T12:00:00Z
 heroImage: '../../assets/triton-msl-part-2-hero.png'
@@ -89,6 +89,6 @@ Attention is the part of this backend I would have hesitated to show six months 
 
 A few threads are further along than this post but not ready to write up. Gluon, Triton's lower-level language, surfaced a real hole in its backend contract that kept it from running here at all; the fix is small and not Metal-specific, so it is drafted upstream, and a proper Gluon backend is its own project. The larger direction is where attention itself is going: the newest models are adopting linear and delta-rule variants, like the gated DeltaNet in Kimi's stack, which are not standard softmax attention. Getting those onto Metal, along with the backward pass that makes attention trainable, is where I went after this post. Both run now, though both are early enough that they earn their own writeup rather than a paragraph here.
 
-If you want to try it, the install and the repo, github.com/bledden/triton-msl, are the same as last time. It is still alpha, and the standing request holds: the backend is built to refuse rather than miscompute, so if you ever catch it handing back a wrong number instead of an error, that is the bug I most want to hear about.
+If you want to try it, the install and the repo, https://github.com/bledden/triton-msl, are the same as last time. It is still alpha, and the standing request holds: the backend is built to refuse rather than miscompute, so if you ever catch it handing back a wrong number instead of an error, that is the bug I most want to hear about.
 
 Same as last time: develop on the Mac you already own, and run the identical kernel on datacenter silicon.
