@@ -53,6 +53,16 @@ Attention looks like the same story. The thing that would actually help is an as
 
 That also settles a question I had been holding open. For a while I assumed attention might have to lean on a hand-tuned library kernel rather than being generated, since the gap looked real and most of attention is not doing anything Triton-specific. The dispatch fix changed that: the generated kernel came out ahead of PyTorch in every case I measured and competitive with MLX, and the one place it still trails MLX is something I could at least measure and explain.
 
+## Beyond softmax: linear attention and a trainable backward
+
+Everything above is softmax attention, and the forward pass only. Two more attention pieces shipped in this release step outside both of those.
+
+The first is linear attention. The newest models do not run pure softmax: Kimi's gated DeltaNet and the DeepSeek-family variants interleave it with linear and delta-rule attention, which trade the softmax for a running state and a fast-weight correction. That is a different computation, not a faster softmax, and its chunked prefill form needs a triangular solve (a UT transform) that will not fold into a single `@triton.jit` kernel. So it ships as a direct op, `triton_msl.kda`: an MMA chunked-prefill kernel for the sequence, a recurrent single-step kernel for decode, fp16 and fp32, each checked against a recurrent reference. As far as I know this is the first time gated DeltaNet has run on Metal.
+
+The second is a backward pass. The FlashAttention above is inference only, an output with no gradients, so you can serve a model with it but not train one. This release adds a Metal backward, `triton_msl.fa_backward.flash_attention`: a `torch.autograd.Function` whose dQ, dK, and dV run on Metal through a tiled FlashAttention-2 backward (causal and full, fp16 and fp32), cross-checked against PyTorch's own SDPA gradients. An attention layer inside a training loop now gets its gradients from the GPU. That is the line between running a model on Apple Silicon and training one on it.
+
+Both are newer than the rest of the backend, and both are direct ops rather than kernels the compiler auto-routes from arbitrary `@triton.jit`, so they are earlier than everything else here. But they are in 0.2.0, they run, and they are tested.
+
 ## Quantized inference
 
 The other thing that shipped is not attention. Weight-only int8 and int4 matmuls now auto-route to dedicated dequantizing kernels, in both the natural `[K, N]` layout and the GPTQ-style `[N, K]`.
@@ -85,9 +95,9 @@ One kernel source, three instruction sets, three Triton versions, and the hashes
 
 ## Where this leaves things
 
-Attention is the part of this backend I would have hesitated to show six months ago. Now it is the first thing I would point at, and the only figure that still favors MLX is the gap at the largest sizes, which I accounted for above. The quieter work landed just as cleanly: quantized decode runs at the memory roofline, a third vendor's output hashes identically to the first two, and a major OS release came and went without a single codegen change.
+Attention is the part of this backend I would have hesitated to show six months ago. Now it is the first thing I would point at, and the only figure that still favors MLX is the gap at the largest sizes, which I accounted for above. The quieter work landed just as cleanly: quantized decode runs at the memory roofline, a third vendor's output hashes identically to the first two, and a major OS release came and went without a single codegen change. And the backend now reaches past softmax attention and past inference, with the linear and delta-rule variants the frontier is moving to and a backward pass that makes attention trainable, both shipped in this release.
 
-A few threads are further along than this post but not ready to write up. Gluon, Triton's lower-level language, surfaced a real hole in its backend contract that kept it from running here at all; the fix is small and not Metal-specific, so it is drafted upstream, and a proper Gluon backend is its own project. The larger direction is where attention itself is going: the newest models are adopting linear and delta-rule variants, like the gated DeltaNet in Kimi's stack, which are not standard softmax attention. Getting those onto Metal, along with the backward pass that makes attention trainable, is where I went after this post. Both run now, though both are early enough that they earn their own writeup rather than a paragraph here.
+One thread is genuinely still ahead of this post. Gluon, Triton's lower-level language, surfaced a real hole in its backend contract that kept it from running here at all; the fix is small and not Metal-specific, so it is drafted upstream, and a proper Gluon backend is its own project.
 
 If you want to try it, the install and the repo, https://github.com/bledden/triton-msl, are the same as last time, and this update ships as triton-msl 0.2.0 (pip install triton-msl). It is still alpha, and the standing request holds: the backend is built to refuse rather than miscompute, so if you ever catch it handing back a wrong number instead of an error, that is the bug I most want to hear about.
 
