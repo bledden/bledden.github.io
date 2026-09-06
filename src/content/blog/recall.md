@@ -2,6 +2,7 @@
 title: 'A Memory Tool for 1% of Your Budget: How Recall Works, and Why I Rely on It'
 description: 'A local, cross-session memory plugin for Claude Code and Cowork. How it works from the system up, and the measured answer to what it costs: about 1% of my token budget across 470,000 requests on three machines.'
 pubDate: 2026-07-05
+updatedDate: 2026-09-05
 heroImage: '../../assets/recall-hero.png'
 ogImage: '../../assets/recall-og.png'
 ---
@@ -162,6 +163,16 @@ Those numbers are a floor, for a mundane reason. While building the plugin I res
 ## Going Forward
 
 Frankly I see some strong benefit towards opening this plugin up to other agentic coding harnesses and models, as well as exploring cross-device index sharing. Ultimately I would love to see Anthropic implement this functionality natively within the Claude ecosystem, as I do believe people are willing to opt-in and leverage their own resources for a better Claude experience.
+
+## Update, September 2026: v2.3 and v2.4
+
+A fresh code review in September found that the "verbatim" claim above was not true in practice, and I would rather say so here than quietly edit the post. Capture paired each prompt with only the *first* assistant text block that followed it, so in agentic turns the "let me look at that" preamble was kept and the actual answer, arriving after the tool calls, was dropped: 71% of Claude's reply text on a real transcript. Capture also ran only on the *next* prompt, so the last turn of every session was never indexed. And everything the hooks tried to inject (the compaction nudge, the proactive suggestion) went out as `systemMessage`, which Claude Code shows to the user, not to Claude.
+
+v2.3 fixed all three: every assistant block between two prompts is merged into one exchange, a `Stop` hook indexes each turn as it completes, and injected context uses `additionalContext`. Replaying one session's transcript through the old and new capture: 15% of reply text retained before, 95% after.
+
+v2.4 closed the gaps a second, independent review found and added what the post above only implied. The exact commands Claude ran are now captured and searchable (327 shell commands in one 20 MB transcript). Search is ranked by relevance and recency and shows the passage that matched. Credential-looking strings are redacted before anything is stored. And `/recall:recall` is now a skill Claude invokes on its own when you refer to earlier work.
+
+Since I wrote the post, Hugging Face shipped [funes](https://github.com/huggingface/funes), which makes the same bets (verbatim, local, deterministic ingest) with embeddings, a reranker and multi-agent support. Recall's answer is to stay the zero-dependency, Claude-native version and get the fundamentals right first. The diagrams and cost numbers above are from v2.2.3 and still describe the design; the one change worth knowing is that capture now happens at the end of each turn rather than the start of the next.
 
 ---
 
