@@ -153,3 +153,19 @@ hr {
 	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
 	white-space: nowrap;
 }
+
+/* Restored Second Nature articles: scoped so other posts keep their layout. */
+.prose:has(.restoration-note) figure { margin: 2rem 0; }
+.prose:has(.restoration-note) figure img { display: block; width: 100%; }
+.prose:has(.restoration-note) figcaption { margin-top: .8rem; font-size: .85em; line-height: 1.6; color: #44516b; }
+.restoration-note { border-left: 3px solid var(--accent); background: #f3f5ff; padding: 1rem 1.2rem; margin: 1rem 0 2.5rem; font-size: .85em; }
+.restoration-note p, .restoration-details p { margin: .8rem 0; }
+.restoration-note summary, .restoration-details summary { cursor: pointer; font-weight: 700; margin-top: .6rem; }
+.prose:has(.restoration-note) h2 { margin-top: 2.5rem; font-size: 1.8em; }
+.prose:has(.restoration-note) h3 { margin-top: 2rem; font-size: 1.35em; }
+.prose:has(.restoration-note) blockquote { font-size: 1em; }
+.prose:has(.restoration-note) .table-scroll { overflow-x: auto; }
+.prose:has(.restoration-note) table { border-collapse: collapse; font-size: .85em; line-height: 1.5; }
+.prose:has(.restoration-note) th, .prose:has(.restoration-note) td { padding: .7rem; text-align: left; vertical-align: top; border-bottom: 1px solid #dbe1ee; }
+.prose:has(.restoration-note) th { background: #f3f5ff; }
+.prose:has(.restoration-note) code { overflow-wrap: anywhere; }

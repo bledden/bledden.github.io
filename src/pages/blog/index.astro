@@ -6,12 +6,12 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
-import ptxHero from '../../assets/getpoppy-ptx-hero.png';
-import upstreamingHero from '../../assets/getpoppy-upstreaming-hero.png';
 
 // Which local posts to show (the collection may hold drafts not listed here).
 // The grid is date-sorted below, so this list's order does not matter.
 const postOrder = [
+	'writing-ptx-for-consumer-blackwell',
+	'four-months-upstreaming-consumer-blackwell',
 	'triton-msl-part-2',         // Triton Metal backend, part 2 - attention perf, quantized inference, AMD
 	'triton-msl',                // 1st - Triton Metal backend, verified byte-identical portability
 	'recall',                    // 2nd - cross-session memory plugin, systems + measured cost
@@ -37,30 +37,8 @@ const localCards = postOrder
 		external: false,
 	}));
 
-// Mirror cards for the Second Nature (getpoppy.app) posts: hero, headline, date.
-// Clicking opens the original post there; the content is not cloned locally.
-const externalCards = [
-	{
-		title: 'Writing PTX for Consumer Blackwell',
-		pubDate: new Date('2026-07-08T12:00:00Z'),
-		heroImage: ptxHero,
-		href: 'https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell',
-		external: true,
-	},
-	{
-		title: 'Four Months Upstreaming Consumer Blackwell',
-		pubDate: new Date('2026-06-22T12:00:00Z'),
-		heroImage: upstreamingHero,
-		href: 'https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell',
-		external: true,
-	},
-];
-
-// Order the whole grid (local posts + mirrors) by date, newest first. The
-// newest post becomes the full-width featured card.
-const cards = [...localCards, ...externalCards].sort(
-	(a, b) => b.pubDate.getTime() - a.pubDate.getTime()
-);
+// Local restorations preserve the original publication dates.
+const cards = localCards.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
 ---
 
 <!doctype html>

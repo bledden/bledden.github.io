@@ -1,0 +1,68 @@
+{
+  "restored_on": "2026-10-18",
+  "original_urls": [
+    "https://getpoppy.app/blog/writing-ptx-for-consumer-blackwell",
+    "https://getpoppy.app/blog/four-months-upstreaming-consumer-blackwell"
+  ],
+  "author_html_sha256": "bb546f86bcba10b4933e45e329a011938b4a46a41c9ad089fc93514ce856dc5e",
+  "preserved_images": [
+    {
+      "file": "ptx-original-01.png",
+      "sha256": "5d0e1496e07f0b9d1241d7c5ff26d20ea13d6666637d7f6f4cd61364ecd00c46",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-02.png",
+      "sha256": "587ec8dad523446dbc020f348ca854513eaa857b6265261037d4a8117c237ded",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-03.png",
+      "sha256": "d8b9b89ecc708866322788f01ec17264fadfb86e5926519e906256ded433262c",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-04.png",
+      "sha256": "7f069a9651e359238cd202dcdce2b5bbf84a2d07bdd3a14bf0e4679361d2dc3d",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-05.png",
+      "sha256": "1182cd04e15a17a7b6d813f274e7c13a030a72a32325f2cdebac3d62a4af5cd4",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-06.png",
+      "sha256": "65450bff3e99075896b404d459cac6aea35980082a06edb60becbefd043aab71",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-07.png",
+      "sha256": "919aa9cce031ff18b2c2cfb2d3f49850c486bbb085dad512584114afe1df45d2",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-08.png",
+      "sha256": "f3940e63c5226debf50469efd9eb6132127607363ef78a951c438ad4130ea951",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    },
+    {
+      "file": "ptx-original-09.png",
+      "sha256": "d85e760191703ae0b1a8f520c73a9b42502e4c9a2d56c2ce99775e328b739b4f",
+      "origin": "Embedded image in preserved local author HTML; published pixel identity not independently established."
+    }
+  ],
+  "recreated_visuals": [
+    "ptx-build-runtime.svg",
+    "ptx-transpose-placement.svg",
+    "ptx-stride-padding.svg",
+    "upstreaming-decode-range.svg",
+    "Upstreaming historical support table (HTML)"
+  ],
+  "benchmark_source": "https://github.com/Dao-AILab/flash-attention/pull/2634#issuecomment-4703768152",
+  "limits": [
+    "Not a byte-identical archive of published HTML.",
+    "Original upstreaming images, raw per-sequence decode points, and companion report remain unavailable.",
+    "Historical claims preserved; reconstructed visuals and added reference index are labeled."
+  ]
+}
